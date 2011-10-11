@@ -9,6 +9,7 @@
 #include "SystemState.h"
 #include "Trace.h"
 #include <cassert>
+#include <iostream>
 
 SSwitchCtrlRegs::SSwitchCtrlRegs() : scratchReg(0)
 {
@@ -211,6 +212,7 @@ void SSwitch::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
   }
   for (unsigned i = 0; i < num; i++) {
     buf[recievedTokens++] = Token(values[i]);
+    //std::cout << "Received " << std::hex << (int) values[i] << "\n";
   }
 }
 
