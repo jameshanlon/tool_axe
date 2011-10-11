@@ -14,7 +14,8 @@ public:
   enum RunnableType {
     THREAD,
     EVENTABLE_RESOURCE,
-    SENTINEL
+    SENTINEL,
+    TOKEN_DELAY
   };
 private:
   RunnableType type;

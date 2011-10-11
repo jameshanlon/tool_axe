@@ -28,6 +28,10 @@ class SystemState {
       Runnable &runnable = scheduler.front();
       scheduler.pop();
       runnable.run(runnable.wakeUpTime);
+
+      // Discard token delays once they have been applied
+      if (runnable.getType() == Runnable::TOKEN_DELAY)
+        delete &runnable;
     }
   }
 
