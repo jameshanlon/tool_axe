@@ -74,6 +74,19 @@ add_executable(axe
   SSwitch.cpp
   WaveformTracer.h
   WaveformTracer.cpp
+  UartRx.h
+  UartRx.cpp
+  PeripheralRegistry.h
+  PeripheralRegistry.cpp
+  registerAllPeripherals.h
+  registerAllPeripherals.cpp
+  Peripheral.h
+  Peripheral.cpp
+  PeripheralDescriptor.h
+  PeripheralDescriptor.cpp
+  Property.h
+  Property.cpp
+  AccessSecondIterator.h
   ConfigSchema.rng
   ${AXE_BINARY_DIR}/InstructionGenOutput.inc
   ${AXE_BINARY_DIR}/ConfigSchema.inc
