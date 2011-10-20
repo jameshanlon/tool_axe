@@ -28,6 +28,7 @@ private:
   SystemState *parent;
   Type type;
   SSwitch sswitch;
+  unsigned getCoreNumberBits() const;
 public:
   typedef std::vector<Core *>::iterator core_iterator;
   typedef std::vector<Core *>::const_iterator const_core_iterator;
@@ -42,6 +43,7 @@ public:
   SystemState *getParent() { return parent; }
   void setNodeID(unsigned value);
   uint32_t getNodeID() const { return nodeID; }
+  uint32_t getCoreID(unsigned coreNum) const;
   Type getType() const { return type; }
   static bool getTypeFromJtagID(unsigned jtagID, Type &type);
   bool hasMatchingNodeID(ResourceID ID);
