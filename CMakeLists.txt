@@ -10,7 +10,7 @@ endif()
 # Add path for custom modules
 set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules"
   )
 
 add_executable(not
@@ -91,7 +91,7 @@ add_executable(axe
   PeripheralRegistry.h
   PeripheralRegistry.cpp
   registerAllPeripherals.h
-  registerAllPeripherals.cpp
+  RegisterAllPeripherals.cpp
   Peripheral.h
   Peripheral.cpp
   PeripheralDescriptor.h
