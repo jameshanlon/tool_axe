@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "PeripheralDescriptor.h"
+#include <stdint.h>
 
 class Property {
   const PropertyDescriptor *descriptor;
