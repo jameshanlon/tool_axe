@@ -35,6 +35,7 @@ public:
   Node(Type t) : jtagIndex(0), nodeID(0), parent(0), type(t), sswitch(this) {}
   ~Node();
   void addCore(std::auto_ptr<Core> cores);
+  void setParent(Core * c);
   void setJtagIndex(unsigned value) { jtagIndex = value; }
   unsigned getJtagIndex() const { return jtagIndex; }
   const std::vector<Core*> &getCores() const { return cores; }

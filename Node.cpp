@@ -16,11 +16,15 @@ Node::~Node()
 
 void Node::addCore(std::auto_ptr<Core> c)
 {
-  c->setParent(this);
+  //c->setParent(this);
   cores.push_back(c.get());
   c.release();
 }
 
+void Node::setParent(Core *c)
+{
+  c->setParent(this);
+}
 
 void Node::setNodeID(unsigned value)
 {
