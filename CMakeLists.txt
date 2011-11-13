@@ -91,7 +91,7 @@ add_executable(axe
   PeripheralRegistry.h
   PeripheralRegistry.cpp
   registerAllPeripherals.h
-  RegisterAllPeripherals.cpp
+  registerAllPeripherals.cpp
   Peripheral.h
   Peripheral.cpp
   PeripheralDescriptor.h
