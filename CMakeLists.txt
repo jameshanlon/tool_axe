@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 2.6)
 project(AXE)
 
+if(CMAKE_COMPILER_IS_GNUCXX )
+  set(COMPILER_IS_GCC_COMPATIBLE ON)
+elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set(COMPILER_IS_GCC_COMPATIBLE ON)
+endif()
+
+# Add path for custom modules
+set(CMAKE_MODULE_PATH
+  ${CMAKE_MODULE_PATH}
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules"
+  )
+
 add_executable(not
   not.cpp
   )
@@ -111,7 +123,7 @@ add_custom_command(
  DEPENDS genHex ConfigSchema.rng
  )
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(COMPILER_IS_GCC_COMPATIBLE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W -Wno-unused-parameter -fno-exceptions -fno-rtti")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -W -Wno-unused-parameter")
 elseif(MSVC)
@@ -122,12 +134,11 @@ elseif(MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_CRT_SECURE_NO_WARNINGS=1")
 endif()
 
-find_library(LIBELF_LIBRARY elf REQUIRED)
-find_path(LIBELF_INCLUDE_DIR libelf.h REQUIRED)
 find_package(LibXml2 REQUIRED)
+find_package(LibElf REQUIRED)
 
 include_directories(
-  ${LIBELF_INCLUDE_DIR}
+  ${LIBELF_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR})
 
 if (MSVC)
@@ -135,7 +146,7 @@ if (MSVC)
   include_directories(${LIBICONV_INCLUDE_DIR})
 endif()
 
-target_link_libraries(axe ${LIBELF_LIBRARY} ${LIBXML2_LIBRARIES})
+target_link_libraries(axe ${LIBELF_LIBRARIES} ${LIBXML2_LIBRARIES})
 
 install(TARGETS axe DESTINATION bin)
 if (MSVC)
