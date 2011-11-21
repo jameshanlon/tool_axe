@@ -7,6 +7,7 @@
 #define _Property_h_
 
 #include <cassert>
+#include <stdint.h>
 
 #include "PeripheralDescriptor.h"
 #include <stdint.h>

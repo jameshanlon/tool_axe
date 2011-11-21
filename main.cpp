@@ -882,6 +882,11 @@ createNodeFromConfig(xmlNode *config,
       continue;
     node->addCore(createCoreFromConfig(child));
   }
+  std::vector<Core*> cores = node->getCores();
+  for (std::vector<Core*>::const_iterator it = cores.begin(), e = cores.end();
+       it != e; ++it) {
+    node->setParent(*it);
+  }
   node->setNodeID(nodeID);
   return node;
 }
