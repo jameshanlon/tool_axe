@@ -28,6 +28,7 @@
 #include "Exceptions.h"
 #include "BitManip.h"
 #include "XE.h"
+#include "SE.h"
 #include "ScopedArray.h"
 #include "Config.h"
 #include "Instruction.h"
@@ -53,6 +54,7 @@ static void printUsage(const char *ProgName) {
 "  --loopback PORT1 PORT2      Connect PORT1 to PORT2.\n"
 "  --vcd FILE                  Write VCD trace to FILE.\n"
 "  -t                          Enable instruction tracing.\n"
+"  -s                          Simulate a sire program.\n"
 "\n"
 "Peripherals:\n";
   for (PeripheralRegistry::iterator it = PeripheralRegistry::begin(),
@@ -882,11 +884,6 @@ createNodeFromConfig(xmlNode *config,
       continue;
     node->addCore(createCoreFromConfig(child));
   }
-  std::vector<Core*> cores = node->getCores();
-  for (std::vector<Core*>::const_iterator it = cores.begin(), e = cores.end();
-       it != e; ++it) {
-    node->setParent(*it);
-  }
   node->setNodeID(nodeID);
   return node;
 }
@@ -990,6 +987,7 @@ readXE(const char *filename, SymbolInfo &SI,
     std::cerr << "Error opening \"" << filename << "\"" << std::endl;
     std::exit(1);
   }
+  xe.read();
   // TODO handle XEs / XBs without a config sector.
   const XESector *configSector = xe.getConfigSector();
   if (!configSector) {
@@ -1029,19 +1027,106 @@ readXE(const char *filename, SymbolInfo &SI,
   return system;
 }
 
+static inline std::auto_ptr<SystemState>
+createSESystem(const char *filename, int numCores)
+{
+  std::auto_ptr<SystemState> systemState(new SystemState);
+  std::map<long, Node*> nodeNumberMap;
+
+  // Create a single parent node
+  std::auto_ptr<Node> node(new Node(Node::XS1_L));
+  unsigned jtagIndex = 0;
+  node->setJtagIndex(jtagIndex);
+  nodeNumberMap.insert(std::make_pair(jtagIndex, node.get()));
+
+  // Create child cores
+  for (int i=0; i<numCores; i++) {
+    uint32_t ram_size = RAM_SIZE;
+    uint32_t ram_base = RAM_BASE;
+    std::auto_ptr<Core> core(new Core(ram_size, ram_base));
+    core->setCoreNumber(i);
+    std::cout << "Created core " << i << "\n";
+    node->addCore(core);
+  }
+
+  systemState->addNode(node);
+  return systemState;
+}
+
+static inline std::auto_ptr<SystemState>
+readSE(const char *filename, SymbolInfo &SI,
+       std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints)
+{
+  std::cout << "Reading " << filename << std::endl;
+  
+  // Load the file into memory.
+  SE se(filename);
+  if (!se) {
+    std::cerr << "Error opening \"" << filename << "\"" << std::endl;
+    std::exit(1);
+  }
+  se.read();
+
+  // Create the system
+  std::auto_ptr<SystemState> system = createSESystem(filename, se.getNumCores());
+  std::map<std::pair<unsigned, unsigned>, Core*> coreMap;
+  addToCoreMap(coreMap, *system);
+
+  // Pick out the master and slave Elf sectors
+  const XEElfSector *masterElfSector;
+  const XEElfSector *slaveElfSector;
+  for (std::vector<const XESector *>::const_reverse_iterator
+       it = se.getSectors().rbegin(), end = se.getSectors().rend(); it != end;
+       ++it) {
+    switch((*it)->getType()) {
+    case XESector::XE_SECTOR_ELF:
+      {
+        const XEElfSector *elfSector = static_cast<const XEElfSector*>(*it);
+        unsigned coreNum = elfSector->getCore();
+        if (coreNum == 0)
+          masterElfSector = static_cast<const XEElfSector*>(*it);
+        else if (coreNum == 1) 
+          slaveElfSector = static_cast<const XEElfSector*>(*it);
+      }
+    }
+  }
+
+  // Load the master and slave Elf images
+  for(int i=0; i<se.getNumCores(); i++) {
+    unsigned jtagIndex = 0;
+    Core *core = coreMap[std::make_pair(jtagIndex, i)];
+    if (!core) {
+      std::cerr << "Error: cannot find core " << i << std::endl;
+      std::exit(1);
+    }
+    std::auto_ptr<CoreSymbolInfo> CSI;
+    readElf(filename, i==0 ? masterElfSector : slaveElfSector, *core, CSI, entryPoints);
+    SI.add(core, CSI);
+    coresWithImage.insert(core);
+    std::cout << "Loaded core "<<core->getCoreID() <<"\n";
+  }
+
+  se.close();
+  return system;
+}
+
 typedef std::vector<std::pair<PeripheralDescriptor*, Properties> >
   PeripheralDescriptorWithPropertiesVector;
 
 template <bool tracing> int
 loop(const char *filename, const LoopbackPorts &loopbackPorts,
      const std::string &vcdFile,
-     const PeripheralDescriptorWithPropertiesVector &peripherals)
+     const PeripheralDescriptorWithPropertiesVector &peripherals, 
+     bool sire)
 {
   std::auto_ptr<SymbolInfo> SI(new SymbolInfo);
   std::set<Core*> coresWithImage;
   std::map<Core*,uint32_t> entryPoints;
-  std::auto_ptr<SystemState> statePtr = readXE(filename, *SI, coresWithImage,
-                                               entryPoints);
+  std::auto_ptr<SystemState> statePtr;
+  if (sire)
+    statePtr = readSE(filename, *SI, coresWithImage, entryPoints);
+  else
+    statePtr = readXE(filename, *SI, coresWithImage, entryPoints);
   SystemState &sys = *statePtr;
 
   // TODO update to handle multiple cores.
@@ -1543,6 +1628,7 @@ main(int argc, char **argv) {
   }
   const char *file = 0;
   bool tracing = false;
+  bool sire = false;
   LoopbackPorts loopbackPorts;
   std::string vcdFile;
   std::string arg;
@@ -1551,6 +1637,8 @@ main(int argc, char **argv) {
     arg = argv[i];
     if (arg == "-t") {
       tracing = true;
+    } else if (arg == "-s") {
+      sire = true;
     } else if (arg == "--vcd") {
       if (i + 1 > argc) {
         printUsage(argv[0]);
@@ -1591,8 +1679,8 @@ main(int argc, char **argv) {
   }
 #endif
   if (tracing) {
-    return loop<true>(file, loopbackPorts, vcdFile, peripherals);
+    return loop<true>(file, loopbackPorts, vcdFile, peripherals, sire);
   } else {
-    return loop<false>(file, loopbackPorts, vcdFile, peripherals);
+    return loop<false>(file, loopbackPorts, vcdFile, peripherals, sire);
   }
 }

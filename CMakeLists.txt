@@ -39,6 +39,8 @@ add_executable(axe
   Exceptions.cpp
   XE.h
   XE.cpp
+  SE.h
+  SE.cpp
   SymbolInfo.h
   SymbolInfo.cpp
   Resource.h
