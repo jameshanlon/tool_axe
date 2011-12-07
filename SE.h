@@ -11,12 +11,12 @@
 
 class SE : public XE {
 public:
-  SE(const char *filename);
+  SE(const char *filename): XE(filename) {}
+  ~SE() {}
   void read();
   int getNumCores() {
     return numCores;
   }
-  ~SE();
 
 private:
   uint32_t numCores;

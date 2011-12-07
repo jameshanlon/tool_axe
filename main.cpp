@@ -1049,6 +1049,7 @@ createSESystem(const char *filename, int numCores)
     node->addCore(core);
   }
 
+  node->setNodeID(jtagIndex);
   systemState->addNode(node);
   return systemState;
 }

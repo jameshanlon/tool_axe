@@ -7,9 +7,6 @@
 #include <cstring>
 #include <iostream>
 
-SE::SE(const char *filename) : XE(filename) {
-}
-
 void SE::read() {
   char magic[4];
   
@@ -34,8 +31,5 @@ void SE::read() {
   
   // Read sector headers
   while (!ReadHeader()) {}
-}
-
-SE::~SE() {
 }
 
