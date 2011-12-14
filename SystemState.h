@@ -145,6 +145,7 @@ public:
   node_iterator node_end() { return nodes.end(); }
   const_node_iterator node_begin() const { return nodes.begin(); }
   const_node_iterator node_end() const { return nodes.end(); }
+  void dump();
 };
 
 #endif // _SystemState_h_

@@ -91,3 +91,19 @@ ChanEndpoint *SystemState::getChanendDest(ResourceID ID)
   }
   return 0;
 }
+
+void SystemState::dump() {
+  for (node_iterator nIt=node_begin(), nEnd=node_end(); nIt!=nEnd; ++nIt) {
+    Node &node = **nIt;
+    for (Node::core_iterator cIt=node.core_begin(), cEnd=node.core_end(); 
+        cIt!=cEnd; ++cIt) {
+      Core &core = **cIt;
+      std::cout << "Core " << core.getCoreNumber() << std::endl;
+      for (int i=0; i<NUM_THREADS; i++) {
+        ThreadState &threadState = core.getThread(i).getState();
+        std::cout << "  Thread " << i << " " << threadState.time << std::endl;
+      }
+    }
+  }
+}
+

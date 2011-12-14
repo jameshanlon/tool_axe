@@ -1045,8 +1045,8 @@ createSESystem(const char *filename, int numCores)
     uint32_t ram_base = RAM_BASE;
     std::auto_ptr<Core> core(new Core(ram_size, ram_base));
     core->setCoreNumber(i);
-    std::cout << "Created core " << i << "\n";
     node->addCore(core);
+    //std::cout<<"Created core "<<i<<"\n";
   }
 
   node->setNodeID(jtagIndex);
@@ -1058,7 +1058,7 @@ static inline std::auto_ptr<SystemState>
 readSE(const char *filename, SymbolInfo &SI,
        std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints)
 {
-  std::cout << "Reading " << filename << std::endl;
+  //std::cout << "Reading " << filename << std::endl;
   
   // Load the file into memory.
   SE se(filename);
@@ -1104,7 +1104,7 @@ readSE(const char *filename, SymbolInfo &SI,
     readElf(filename, i==0 ? masterElfSector : slaveElfSector, *core, CSI, entryPoints);
     SI.add(core, CSI);
     coresWithImage.insert(core);
-    std::cout << "Loaded core "<<core->getCoreID() <<"\n";
+    //std::cout<<"Loaded core "<<core->getCoreID()<<"\n";
   }
 
   se.close();
@@ -1276,6 +1276,7 @@ loop(const char *filename, const LoopbackPorts &loopbackPorts,
     thread->pc = PC;
     switch (SyscallHandler::doSyscall(*thread, retval)) {
     case SyscallHandler::EXIT:
+      statePtr->dump();
       return retval;
       break;
     case SyscallHandler::DESCHEDULE:
