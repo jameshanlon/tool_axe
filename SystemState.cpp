@@ -3,6 +3,7 @@
 // University of Illinois/NCSA Open Source License posted in
 // LICENSE.txt and at <http://github.xcore.com/>
 
+#include <iomanip>
 #include "SystemState.h"
 #include "Node.h"
 #include "Core.h"
@@ -93,17 +94,43 @@ ChanEndpoint *SystemState::getChanendDest(ResourceID ID)
 }
 
 void SystemState::dump() {
+  long totalCount = 0;
+  ticks_t maxTime = 0;
   for (node_iterator nIt=node_begin(), nEnd=node_end(); nIt!=nEnd; ++nIt) {
     Node &node = **nIt;
     for (Node::core_iterator cIt=node.core_begin(), cEnd=node.core_end(); 
         cIt!=cEnd; ++cIt) {
       Core &core = **cIt;
       std::cout << "Core " << core.getCoreNumber() << std::endl;
+      std::cout 
+        << std::setw(8) << "Thread" << " "
+        << std::setw(12) << "Time" << " "
+        << std::setw(12) << "Insts" << " "
+        << std::setw(12) << "Insts/cycle" << std::endl;
       for (int i=0; i<NUM_THREADS; i++) {
         ThreadState &threadState = core.getThread(i).getState();
-        std::cout << "  Thread " << i << " " << threadState.time << std::endl;
+        totalCount += threadState.count;
+        maxTime = maxTime > threadState.time ? maxTime : threadState.time;
+        double ratio = (double) threadState.count / (double) threadState.time;
+        std::cout 
+          << std::setw(8) << i << " " 
+          << std::setw(12) << threadState.time << " "
+          << std::setw(12) << threadState.count << " " 
+          << std::setw(12) << std::setprecision(2) << ratio << std::endl;
       }
     }
   }
+  // Assume 10ns cycle (400Mhz clock)
+  double seconds = (double) maxTime / 100000000.0;
+  double opsPerSec = (double) totalCount / seconds;
+  double gOpsPerSec = opsPerSec / 1000000.0;
+  std::cout << std::endl;
+  std::cout << "Total instructions executed:  " << totalCount << std::endl;
+  std::cout << "Total cycles:                 " << maxTime << std::endl;
+  std::cout << "Elapsed time (s):             " 
+    << std::setprecision(2) << seconds << std::endl;
+  std::cout << "Instructions per second:      "
+    << std::setprecision(2) << opsPerSec
+    << " (" << std::setprecision(2) << gOpsPerSec << " GIPS)" << std::endl;
 }
 

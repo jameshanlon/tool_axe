@@ -55,6 +55,7 @@ static void printUsage(const char *ProgName) {
 "  --vcd FILE                  Write VCD trace to FILE.\n"
 "  -t                          Enable instruction tracing.\n"
 "  -s                          Simulate a sire program.\n"
+"  -d                          Dump execution statictics.\n"
 "\n"
 "Peripherals:\n";
   for (PeripheralRegistry::iterator it = PeripheralRegistry::begin(),
@@ -708,6 +709,7 @@ do { \
 #define IMM(Num) (Num)
 #define PC pc
 #define TIME thread->time
+#define COUNT thread->count
 #define TO_PC(addr) (core->physicalAddress(addr) >> 1)
 #define FROM_PC(addr) core->virtualAddress((addr) << 1)
 #define CHECK_PC(addr) ((addr) < (core->ram_size << 1))
@@ -1118,7 +1120,7 @@ template <bool tracing> int
 loop(const char *filename, const LoopbackPorts &loopbackPorts,
      const std::string &vcdFile,
      const PeripheralDescriptorWithPropertiesVector &peripherals, 
-     bool sire)
+     bool sire, bool stats)
 {
   std::auto_ptr<SymbolInfo> SI(new SymbolInfo);
   std::set<Core*> coresWithImage;
@@ -1276,7 +1278,8 @@ loop(const char *filename, const LoopbackPorts &loopbackPorts,
     thread->pc = PC;
     switch (SyscallHandler::doSyscall(*thread, retval)) {
     case SyscallHandler::EXIT:
-      statePtr->dump();
+      if (stats)
+        statePtr->dump();
       return retval;
       break;
     case SyscallHandler::DESCHEDULE:
@@ -1631,6 +1634,7 @@ main(int argc, char **argv) {
   const char *file = 0;
   bool tracing = false;
   bool sire = false;
+  bool stats = false;
   LoopbackPorts loopbackPorts;
   std::string vcdFile;
   std::string arg;
@@ -1641,6 +1645,8 @@ main(int argc, char **argv) {
       tracing = true;
     } else if (arg == "-s") {
       sire = true;
+    } else if (arg == "-d") {
+      stats = true;
     } else if (arg == "--vcd") {
       if (i + 1 > argc) {
         printUsage(argv[0]);
@@ -1681,8 +1687,8 @@ main(int argc, char **argv) {
   }
 #endif
   if (tracing) {
-    return loop<true>(file, loopbackPorts, vcdFile, peripherals, sire);
+    return loop<true>(file, loopbackPorts, vcdFile, peripherals, sire, stats);
   } else {
-    return loop<false>(file, loopbackPorts, vcdFile, peripherals, sire);
+    return loop<false>(file, loopbackPorts, vcdFile, peripherals, sire, stats);
   }
 }

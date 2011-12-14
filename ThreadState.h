@@ -136,6 +136,8 @@ public:
   /// The time for the thread. This approximates the XCore's 400 MHz processor
   /// clock.
   ticks_t time;
+  // Instructions executed count
+  long count;
   sr_t sr;
   uint32_t illegal_pc;
   /// The resource on which the thread is paused on.
@@ -144,6 +146,7 @@ public:
   ThreadState(Thread &r) : Runnable(THREAD), threadRes(r), parent(0)
   {
     time = 0;
+    count = 0;
     pc = 0;
     regs[KEP] = 0;
     regs[KSP] = 0;

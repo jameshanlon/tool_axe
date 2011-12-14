@@ -416,6 +416,12 @@ emitCycles(const Instruction &instruction)
 }
 
 static void
+emitCount()
+{
+  std::cout << "COUNT += 1;\n";
+}
+
+static void
 emitRegWriteBack(const Instruction &instruction)
 {
   const std::vector<OpType> &operands = instruction.getOperands();
@@ -522,6 +528,7 @@ emitCode(const Instruction &instruction,
       } else if (std::strncmp(&s[i], "exception(", 10) == 0) {
         i += 10;
         emitCycles(instruction);
+        emitCount();
         emitTraceEnd();
         std::cout << "EXCEPTION(";
         const char *close = scanClosingBracket(&s[i]);
@@ -534,6 +541,7 @@ emitCode(const Instruction &instruction,
       } else if (std::strncmp(&s[i], "kcall(", 6) == 0) {
         i += 6;
         emitCycles(instruction);
+        emitCount();
         emitRegWriteBack(instruction);
         emitTraceEnd();
         std::cout << "EXCEPTION(ET_KCALL, ";
@@ -559,6 +567,7 @@ emitCode(const Instruction &instruction,
       } else if (std::strncmp(&s[i], "next", 4) == 0) {
         i += 3;
         emitCycles(instruction);
+        emitCount();
         emitRegWriteBack(instruction);
         emitCheckEvents(instruction);
         emitTraceEnd();
@@ -568,6 +577,7 @@ emitCode(const Instruction &instruction,
       } else if (std::strncmp(&s[i], "deschedule", 10) == 0) {
         i += 10;
         emitCycles(instruction);
+        emitCount();
         emitCheckEventsOrDeschedule(instruction);
         emitTraceEnd();
         std::cout << "goto " << getEndLabel(instruction) << ";\n";
@@ -762,6 +772,7 @@ emitInstDispatch(Instruction &instruction)
     std::cout << '\n';
     // Write operands.
     emitCycles(instruction);
+    emitCount();
     emitRegWriteBack(instruction);
     emitCheckEvents(instruction);
     emitTraceEnd();
