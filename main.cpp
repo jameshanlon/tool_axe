@@ -19,6 +19,7 @@
 #include <climits>
 #include <set>
 #include <map>
+#include <ctime>
 
 #include "Trace.h"
 #include "Resource.h"
@@ -1204,6 +1205,8 @@ loop(const char *filename, const LoopbackPorts &loopbackPorts,
   OPCODE_TYPE *opcode = core->opcode;
   Operands *operands = core->operands;
 
+  clock_t start = std::clock();
+
   // The main dispatch loop. On backward branches and indirect jumps we call
   // NEXT_THREAD() to ensure one thread which never pauses cannot starve the
   // other threads.
@@ -1278,8 +1281,10 @@ loop(const char *filename, const LoopbackPorts &loopbackPorts,
     thread->pc = PC;
     switch (SyscallHandler::doSyscall(*thread, retval)) {
     case SyscallHandler::EXIT:
+      { double elapsed = (double) (std::clock()-start) / (double) CLOCKS_PER_SEC;
       if (stats)
-        statePtr->dump();
+        statePtr->dump(elapsed);
+      }
       return retval;
       break;
     case SyscallHandler::DESCHEDULE:

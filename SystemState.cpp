@@ -93,15 +93,20 @@ ChanEndpoint *SystemState::getChanendDest(ResourceID ID)
   return 0;
 }
 
-void SystemState::dump() {
+void SystemState::dump(double elapsedTime) {
   long totalCount = 0;
   ticks_t maxTime = 0;
+  int numCores = 0;
   for (node_iterator nIt=node_begin(), nEnd=node_end(); nIt!=nEnd; ++nIt) {
     Node &node = **nIt;
+    std::cout << "Node " << node.getNodeID()
+      << " =========================================" << std::endl;
     for (Node::core_iterator cIt=node.core_begin(), cEnd=node.core_end(); 
         cIt!=cEnd; ++cIt) {
       Core &core = **cIt;
-      std::cout << "Core " << core.getCoreNumber() << std::endl;
+      numCores++;
+      std::cout << "Core " << core.getCoreNumber() 
+        << " -----------------------------------------" << std::endl;
       std::cout 
         << std::setw(8) << "Thread" << " "
         << std::setw(12) << "Time" << " "
@@ -120,17 +125,41 @@ void SystemState::dump() {
       }
     }
   }
+ 
+  // Simulated performance
   // Assume 10ns cycle (400Mhz clock)
+#define CYCLES_PER_SEC (400*1000000)
   double seconds = (double) maxTime / 100000000.0;
   double opsPerSec = (double) totalCount / seconds;
-  double gOpsPerSec = opsPerSec / 1000000.0;
+  double gOpsPerSec = opsPerSec / 1000000000.0;
+  long peakOpsPerSec = numCores * CYCLES_PER_SEC;
+  double perCentPeak = (100.0/peakOpsPerSec) * opsPerSec;
   std::cout << std::endl;
+  std::cout << "Simulated performance ==========================" 
+    << std::endl;
   std::cout << "Total instructions executed:  " << totalCount << std::endl;
   std::cout << "Total cycles:                 " << maxTime << std::endl;
-  std::cout << "Elapsed time (s):             " 
-    << std::setprecision(2) << seconds << std::endl;
+  std::cout << "Elapsed time:                 " 
+    << std::setprecision(3) << seconds << "s" << std::endl;
   std::cout << "Instructions per second:      "
-    << std::setprecision(2) << opsPerSec
+    << std::setprecision(3) << opsPerSec
     << " (" << std::setprecision(2) << gOpsPerSec << " GIPS)" << std::endl;
+  std::cout << "Of peak:                      " 
+    << std::setprecision(2) << perCentPeak << "\%" << std::endl;
+  
+  // Simulation performance
+  double opsPerRealSec = (double) totalCount / elapsedTime;
+  double gOpsPerRealSec = opsPerRealSec / 1000000000.0;
+  double slowdown = opsPerSec / opsPerRealSec;
+  std::cout << std::endl;
+  std::cout << "Simulation performance =========================" 
+    << std::endl;
+  std::cout << "Elapsed time:                 "
+    << std::setprecision(3) << elapsedTime << "s" << std::endl;
+  std::cout << "Instructions per second:      "
+    << std::setprecision(3) << opsPerRealSec
+    << " (" << std::setprecision(2) << gOpsPerRealSec << " GIPS)" << std::endl;
+  std::cout << "Slowdown:                     "
+    << std::setprecision(2) << slowdown << "x" << std::endl;
 }
 
