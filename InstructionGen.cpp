@@ -814,6 +814,9 @@ static void emitInstList()
 /// between threads.
 #define DIV_CYCLES 32
 
+/// Number of cycles a memory access takes to complete
+#define MEMORY_ACCESS_CYCLES 0
+
 Instruction &
 f3r(const std::string &name,
     const std::string &format,
@@ -1106,7 +1109,8 @@ void add()
       "if (!CHECK_ADDR_WORD(PhyAddr)) {\n"
       "  %exception(ET_LOAD_STORE, Addr)"
       "}\n"
-      "%0 = LOAD_WORD(PhyAddr);\n");
+      "%0 = LOAD_WORD(PhyAddr);\n")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f2rus("LDW", "ldw %0, %1[%2]",
         "uint32_t Addr = %1 + %2;\n"
         "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1114,21 +1118,24 @@ void add()
         "  %exception(ET_LOAD_STORE, Addr)"
         "}\n"
         "%0 = LOAD_WORD(PhyAddr);\n")
-    .transform("%2 = %2 << 2;", "%2 = %2 >> 2;");
+    .transform("%2 = %2 << 2;", "%2 = %2 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f3r("LD16S", "ld16s %0, %1[%2]",
       "uint32_t Addr = %1 + (%2 << 1);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
       "if (!CHECK_ADDR_SHORT(PhyAddr)) {\n"
       "  %exception(ET_LOAD_STORE, Addr)"
       "}\n"
-      "%0 = signExtend(LOAD_SHORT(PhyAddr), 16);\n");
+      "%0 = signExtend(LOAD_SHORT(PhyAddr), 16);\n")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f3r("LD8U", "ld8u %0, %1[%2]",
       "uint32_t Addr = %1 + %2;\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
       "if (!CHECK_ADDR(PhyAddr)) {\n"
       "  %exception(ET_LOAD_STORE, Addr)"
       "}\n"
-      "%0 = LOAD_BYTE(PhyAddr);\n");
+      "%0 = LOAD_BYTE(PhyAddr);\n")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f2rus_in("STW", "stw %0, %1[%2]",
            "uint32_t Addr = %1 + %2;\n"
            "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1136,7 +1143,8 @@ void add()
            "  %exception(ET_LOAD_STORE, Addr)"
            "}\n"
            "STORE_WORD(%0, PhyAddr);\n")
-    .transform("%2 = %2 << 2;", "%2 = %2 >> 2;");
+    .transform("%2 = %2 << 2;", "%2 = %2 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   // TSETR needs special handling as one operands is not a register on the
   // current thread.
   inst("TSETR_3r", 2, ops(imm, in, in), "set t[%2]:r%0, %1",
@@ -1161,21 +1169,24 @@ void add()
           "if (!CHECK_ADDR_WORD(PhyAddr)) {\n"
           "  %exception(ET_LOAD_STORE, Addr)"
           "}\n"
-          "STORE_WORD(%0, PhyAddr);\n");
+          "STORE_WORD(%0, PhyAddr);\n")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fl3r_in("ST16", "st16 %0, %1[%2]",
           "uint32_t Addr = %1 + (%2 << 1);\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
           "if (!CHECK_ADDR_SHORT(PhyAddr)) {\n"
           "  %exception(ET_LOAD_STORE, Addr)"
           "}\n"
-          "STORE_SHORT(%0, PhyAddr);\n");
+          "STORE_SHORT(%0, PhyAddr);\n")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fl3r_in("ST8", "st8 %0, %1[%2]",
           "uint32_t Addr = %1 + %2;\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
           "if (!CHECK_ADDR(PhyAddr)) {\n"
           "  %exception(ET_LOAD_STORE, Addr)"
           "}\n"
-          "STORE_BYTE(%0, PhyAddr);\n");
+          "STORE_BYTE(%0, PhyAddr);\n")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fl3r("MUL", "mul %0, %1, %2", "%0 = %1 * %2;");
   fl3r("DIVS", "divs %0, %1, %2",
        "if (%2 == 0 ||\n"
@@ -1305,7 +1316,8 @@ void add()
            "}\n"
            "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(dp, in)
-    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;");
+    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fru6_out("LDWCP", "ldw %0, cp[%{cp}1]",
            "uint32_t Addr = %2 + %1;\n"
            "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1314,7 +1326,8 @@ void add()
            "}\n"
            "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(cp, in)
-  .transform("%1 = %1 << 2;", "%1 = %1 >> 2;");
+    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fru6_out("LDWSP", "ldw %0, sp[%1]",
            "uint32_t Addr = %2 + %1;\n"
            "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1323,7 +1336,8 @@ void add()
            "}\n"
            "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(sp, in)
-    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;");
+    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fru6_in("STWDP", "stw %0, dp[%{dp}1]",
           "uint32_t Addr = %2 + %1;\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1332,7 +1346,8 @@ void add()
           "}\n"
           "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(dp, in)
-    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;");
+    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fru6_in("STWSP", "stw %0, sp[%1]",
           "uint32_t Addr = %2 + %1;\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1341,7 +1356,8 @@ void add()
           "}\n"
           "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(sp, in)
-    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;");
+    .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fru6_out("LDAWSP", "ldaw %0, sp[%1]",
            "%0 = %2 + %1;")
     .addImplicitOp(sp, in)
@@ -1412,7 +1428,8 @@ void add()
       "}\n")
     .addImplicitOp(sp, inout)
     .addImplicitOp(lr, in)
-    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;");
+    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fu6("RETSP", "retsp %0",
       "uint32_t target;\n"
       "if (%0 > 0) {\n"
@@ -1436,7 +1453,7 @@ void add()
     .addImplicitOp(lr, inout)
     .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
     // retsp always causes an fnop.
-    .setCycles(2 * INSTRUCTION_CYCLES);
+    .setCycles(2 * INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fu6("KRESTSP", "krestsp %0",
       "uint32_t Addr = %1 + %0;\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1447,7 +1464,8 @@ void add()
       "%1 = LOAD_WORD(PhyAddr);")
     .addImplicitOp(sp, inout)
     .addImplicitOp(ksp, out)
-    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;");
+    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fu6("KENTSP", "kentsp %0",
       "uint32_t PhyAddr = PHYSICAL_ADDR(%2);\n"
       "if (!CHECK_ADDR_WORD(PhyAddr)) {\n"
@@ -1457,7 +1475,8 @@ void add()
       "%1 = %2 - OP(0);")
     .addImplicitOp(sp, inout)
     .addImplicitOp(ksp, in)
-    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;");
+    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fu6("BRFU", "bu %0", "%pc = %0;")
     .transform("%0 = %pc + %0;", "%0 = %0 - %pc;");
   fu6("BRFU_illegal", "bu %0", "%exception(ET_ILLEGAL_PC, %0)")
@@ -1498,7 +1517,7 @@ void add()
     .addImplicitOp(lr, out)
     .addImplicitOp(r11, in)
     // BLAT always causes an fnop.
-    .setCycles(2 * INSTRUCTION_CYCLES);
+    .setCycles(2 * INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   fu6("KCALL", "kcall %0", "%kcall(%0)");
   fu6("GETSR", "getsr %1, %0", "%1 = %0 & (uint32_t) %2.to_ulong();")
     .addImplicitOp(r11, out)
@@ -1512,7 +1531,8 @@ void add()
        "%1 = LOAD_WORD(PhyAddr);")
     .addImplicitOp(r11, out)
     .addImplicitOp(cp, in)
-    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;");
+    .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   // TODO could be optimised to %1 = ram_base + %0
   fu10("LDAPF", "ldap %1, %0", "%1 = FROM_PC(%pc) + %0;")
     .addImplicitOp(r11, out)
@@ -1557,7 +1577,7 @@ void add()
     .addImplicitOp(lr, out)
     .addImplicitOp(cp, in)
     // BLACP always causes an fnop.
-    .setCycles(2 * INSTRUCTION_CYCLES);
+    .setCycles(2 * INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f2r("NOT", "not %0, %1", "%0 = ~%1;");
   f2r("NEG", "neg %0, %1", "%0 = -%1;");
   frus_inout("SEXT", "sext %0, %1", "%0 = signExtend(%0, %1);");
@@ -2176,7 +2196,8 @@ void add()
       "}\n"
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(spc, out)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("LDSSR", "ldw %0, sp[2]", 
       "uint32_t Addr = %1 + (2 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2185,7 +2206,8 @@ void add()
       "}\n"
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(ssr, out)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("LDSED", "ldw %0, sp[3]", 
       "uint32_t Addr = %1 + (3 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2194,7 +2216,8 @@ void add()
       "}\n"
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(sed, out)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("LDET", "ldw %0, sp[4]", 
       "uint32_t Addr = %1 + (4 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2203,7 +2226,8 @@ void add()
       "}\n"
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(et, out)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("STSPC", "stw %0, sp[1]", 
       "uint32_t Addr = %1 + (1 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2212,7 +2236,8 @@ void add()
       "}\n"
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(spc, in)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("STSSR", "stw %0, sp[2]", 
       "uint32_t Addr = %1 + (2 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2221,7 +2246,8 @@ void add()
       "}\n"
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(ssr, in)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("STSED", "stw %0, sp[3]", 
       "uint32_t Addr = %1 + (3 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2230,7 +2256,8 @@ void add()
       "}\n"
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(sed, in)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("STET", "stw %0, sp[4]", 
       "uint32_t Addr = %1 + (4 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2239,7 +2266,8 @@ void add()
       "}\n"
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(et, in)
-    .addImplicitOp(sp, in);
+    .addImplicitOp(sp, in)
+    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
   f0r("FREET", "freet", "").setCustom();
   f0r("DCALL", "dcall", "").setUnimplemented();
   f0r("DRET", "dret", "").setUnimplemented();
