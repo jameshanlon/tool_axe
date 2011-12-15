@@ -8,6 +8,8 @@
 
 #include "Runnable.h"
 #include <cassert>
+#include <queue>
+#include <iostream>
 
 class RunnableQueue {
 private:
@@ -20,6 +22,14 @@ private:
   {
     return thread.prev != 0;
   }
+  /*class Compare {
+  public:
+    bool operator()(const Runnable *r1, const Runnable *r2) const {
+      return r1->wakeUpTime > r2->wakeUpTime;
+    }
+  };
+  std::priority_queue<Runnable*, std::vector<Runnable*>, Compare> queue;*/
+
 public:
   RunnableQueue() {}
   
@@ -47,6 +57,7 @@ public:
   {
     if (contains(thread)) {
       remove(thread);
+      assert(0);
     }
     thread.wakeUpTime = time;
     Runnable *p = &head;
@@ -64,6 +75,25 @@ public:
     assert(head.next);
     remove(*head.next);
   }
+  
+  /*Runnable &front() const {
+    return *const_cast<Runnable*>(queue.top());
+  }
+  
+  bool empty() const {
+    return queue.empty();
+  }
+  
+  // Insert a thread into the queue
+  void push(Runnable &thread, ticks_t time) {
+    thread.wakeUpTime = time;
+    queue.push(&thread);
+  }
+  
+  void pop() {
+    assert(queue.size() > 0);
+    queue.pop();
+  }*/
 };
 
 #endif // _RunnableQueue_h_
