@@ -132,8 +132,9 @@ void SystemState::dump(double elapsedTime) {
   double seconds = (double) maxTime / 100000000.0;
   double opsPerSec = (double) totalCount / seconds;
   double gOpsPerSec = opsPerSec / 1000000000.0;
-  long peakOpsPerSec = numCores * CYCLES_PER_SEC;
-  double perCentPeak = (100.0/peakOpsPerSec) * opsPerSec;
+  long peakOpsPerSec = (long) numCores * CYCLES_PER_SEC;
+  long peakGOpsPerSec = peakOpsPerSec / 1000000000.0;
+  double perCentPeak = (100.0/(double) peakOpsPerSec) * opsPerSec;
   std::cout << std::endl;
   std::cout << "Simulated performance ==========================" 
     << std::endl;
@@ -144,8 +145,9 @@ void SystemState::dump(double elapsedTime) {
   std::cout << "Instructions per second:      "
     << std::setprecision(3) << opsPerSec
     << " (" << std::setprecision(2) << gOpsPerSec << " GIPS)" << std::endl;
-  std::cout << "Of peak:                      " 
-    << std::setprecision(2) << perCentPeak << "\%" << std::endl;
+  std::cout << "Of peak:                      "
+    << std::setprecision(2) << perCentPeak << "\% (" 
+    << peakGOpsPerSec << " GIPS)" << std::endl;
   
   // Simulation performance
   double opsPerRealSec = (double) totalCount / elapsedTime;
