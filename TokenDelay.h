@@ -58,7 +58,7 @@ class DataTokensDelay : public TokenDelay {
   unsigned num;
 
 public:
-  DataTokensDelay(ChanEndpoint *dest, uint8_t tokens_[], unsigned num) :
+  DataTokensDelay(ChanEndpoint *dest, uint8_t tokens_[], int num) :
     TokenDelay(dest),
     num(num)
   { tokens = new uint8_t[num];
