@@ -65,6 +65,8 @@ add_executable(axe
   PortSplitter.cpp
   Port.h
   Port.cpp
+  PortArg.h
+  PortArg.cpp
   PortNames.h
   PortNames.cpp
   Trace.h
