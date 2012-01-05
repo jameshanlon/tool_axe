@@ -29,6 +29,8 @@ private:
   /// Should be current packet be junked?
   bool junkPacket;
 
+  void debug();
+
   /// Update the channel end after the data is placed in the buffer.
   void update(ticks_t time);
 

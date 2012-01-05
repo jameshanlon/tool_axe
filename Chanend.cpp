@@ -9,9 +9,17 @@
 #include "SystemState.h"
 #include "TokenDelay.h"
 #include <algorithm>
-//#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <cstring>
 
 #define DELAY 100
+
+void Chanend::debug() {
+  std::cout << std::setw(6) << (uint64_t) getOwner().time << " ";
+  std::cout << "[c" << getOwner().getParent().getCoreID();
+  std::cout << "t"<<getOwner().getID() << "] ";
+}
 
 bool Chanend::canAcceptToken()
 {
@@ -27,7 +35,7 @@ void Chanend::receiveDataToken(ticks_t time, uint8_t value)
 {
   buf.push_back(Token(value));
   update(time);
-  //std::cout << "Got 1 data token" << std::endl;
+  //debug(); std::cout << "Got 1 data token" << std::endl;
 }
 
 void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
@@ -36,7 +44,7 @@ void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
     buf.push_back(Token(values[i]));
   }
   update(time);
-  //std::cout << "Got " << num << " data tokens at " << time << std::endl;
+  //debug(); std::cout << "Got " << num << " data tokens at " << time << std::endl;
 }
 
 void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
@@ -54,7 +62,7 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
     break;
   }
   update(time);
-  //std::cout << "Got a control token " << (int)value << " at " << time << std::endl;
+  //debug(); std::cout << "Got a control token " << (int)value << " at " << time << std::endl;
 }
 
 void Chanend::notifyDestClaimed(ticks_t time)
@@ -120,7 +128,7 @@ outt(ThreadState &thread, uint8_t value, ticks_t time)
   //dest->receiveDataToken(time, value);
   TokenDelay *td = new DataTokenDelay(dest, value);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+DELAY);
-  //std::cout << "Sent a data token at " << time << " with delay 100\n";
+  //debug(); std::cout << "Sent a data token at " << time << " with delay 100\n";
   return CONTINUE;
 }
 
@@ -148,7 +156,7 @@ out(ThreadState &thread, uint32_t value, ticks_t time)
   //dest->receiveDataTokens(time, tokens, 4);
   TokenDelay *td = new DataTokensDelay(dest, tokens, 4);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+DELAY);
-  //std::cout << "Sent 4 data tokens at " << time << " with delay " << DELAY << "\n";
+  //debug(); std::cout << "Sent 4 data tokens at "<<time<<" with delay "<<DELAY<<"\n";
   return CONTINUE;
 }
 
@@ -174,7 +182,7 @@ outct(ThreadState &thread, uint8_t value, ticks_t time)
   //dest->receiveCtrlToken(time, value);
   TokenDelay *td = new CtrlTokenDelay(dest, value);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+DELAY);
-  //std::cout << "Sent a control token at " << time << " with delay " << DELAY << "\n";
+  //debug(); std::cout << "Sent a control token at " << time << " with delay " << DELAY << "\n";
   if (value == CT_END || value == CT_PAUSE) {
     inPacket = false;
   }
