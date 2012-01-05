@@ -125,10 +125,22 @@ void SystemState::dump(double elapsedTime) {
       }
     }
   }
- 
+
+  // Simulation parameters
+  std::cout << std::endl;
+  double ramSizeKB = (double) RAM_SIZE / 1000.0;
+  double coreFreqMHz = (double) CYCLES_PER_SEC / 1000000.0;
+  std::cout << "Simulation parameters =========================="
+    << std::endl;
+  std::cout << "Num cores:                    " << numCores << std::endl;
+  std::cout << "Num threads per core:         " << NUM_THREADS << std::endl;
+  std::cout << "Memory size per core:         " 
+    << std::setprecision(2) << ramSizeKB << "KB" << std::endl;
+  std::cout << "Core frequency:               " 
+    << std::setprecision(4) << coreFreqMHz << "MHz" << std::endl;
+  std::cout << "Memory latency (cycles):      " << MEMORY_ACCESS_CYCLES << std::endl;
+  
   // Simulated performance
-  // Assume 10ns cycle (400Mhz clock)
-#define CYCLES_PER_SEC (400*1000000)
   double seconds = (double) maxTime / 100000000.0;
   double opsPerSec = (double) totalCount / seconds;
   double gOpsPerSec = opsPerSec / 1000000000.0;
@@ -136,7 +148,7 @@ void SystemState::dump(double elapsedTime) {
   long peakGOpsPerSec = peakOpsPerSec / 1000000000.0;
   double perCentPeak = (100.0/(double) peakOpsPerSec) * opsPerSec;
   std::cout << std::endl;
-  std::cout << "Simulated performance ==========================" 
+  std::cout << "Simulated performance =========================="
     << std::endl;
   std::cout << "Total instructions executed:  " << totalCount << std::endl;
   std::cout << "Total cycles:                 " << maxTime << std::endl;

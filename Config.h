@@ -10,11 +10,11 @@
 #include <boost/detail/endian.hpp>
 
 /// Number of threads per core.
-#define NUM_THREADS 8
+#define NUM_THREADS 16
 
 /// Number of synchronisers per core.
 // TODO Check number.
-#define NUM_SYNCS 8
+#define NUM_SYNCS 16
 
 /// Number of locks per core.
 #define NUM_LOCKS 4
@@ -50,6 +50,12 @@
 
 /// Number of processor cycles per 100MHz timer tick
 #define CYCLES_PER_TICK 4
+
+  // Assume 10ns cycle (400Mhz clock)
+#define CYCLES_PER_SEC (400*1000000)
+
+/// Number of cycles a memory access takes to complete
+#define MEMORY_ACCESS_CYCLES 0
 
 typedef uint64_t ticks_t;
 

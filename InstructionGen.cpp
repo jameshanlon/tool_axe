@@ -11,6 +11,7 @@
 #include <cstring>
 #include <cctype>
 #include <cassert>
+#include "Config.h"
 
 // TODO emit line markers.
 
@@ -813,9 +814,6 @@ static void emitInstList()
 /// approximate. The XCore divide unit divides 1 bit per cycle and is shared
 /// between threads.
 #define DIV_CYCLES 32
-
-/// Number of cycles a memory access takes to complete
-#define MEMORY_ACCESS_CYCLES 0
 
 Instruction &
 f3r(const std::string &name,
