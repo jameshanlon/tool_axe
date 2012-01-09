@@ -130,15 +130,21 @@ void SystemState::dump(double elapsedTime) {
   std::cout << std::endl;
   double ramSizeKB = (double) RAM_SIZE / 1000.0;
   double coreFreqMHz = (double) CYCLES_PER_SEC / 1000000.0;
+  double aggregateRam = ((double) numCores * ramSizeKB) / 1000.0;
   std::cout << "Simulation parameters =========================="
     << std::endl;
-  std::cout << "Num cores:                    " << numCores << std::endl;
-  std::cout << "Num threads per core:         " << NUM_THREADS << std::endl;
+  std::cout << "Num cores:                    "
+    << numCores << std::endl;
+  std::cout << "Num threads per core:         " 
+    << NUM_THREADS << std::endl;
   std::cout << "Memory size per core:         " 
-    << std::setprecision(2) << ramSizeKB << "KB" << std::endl;
+    << std::setprecision(4) << ramSizeKB << "KB" << std::endl;
+  std::cout << "Aggregate memory:             " 
+    << std::setprecision(4) << aggregateRam << "MB" << std::endl;
   std::cout << "Core frequency:               " 
     << std::setprecision(4) << coreFreqMHz << "MHz" << std::endl;
-  std::cout << "Memory latency (cycles):      " << MEMORY_ACCESS_CYCLES << std::endl;
+  std::cout << "Memory latency (cycles):      "
+    << MEMORY_ACCESS_CYCLES << std::endl;
   
   // Simulated performance
   double seconds = (double) maxTime / 100000000.0;
@@ -150,8 +156,10 @@ void SystemState::dump(double elapsedTime) {
   std::cout << std::endl;
   std::cout << "Simulated performance =========================="
     << std::endl;
-  std::cout << "Total instructions executed:  " << totalCount << std::endl;
-  std::cout << "Total cycles:                 " << maxTime << std::endl;
+  std::cout << "Total instructions executed:  "
+    << totalCount << std::endl;
+  std::cout << "Total cycles:                 "
+    << maxTime << std::endl;
   std::cout << "Elapsed time:                 " 
     << std::setprecision(3) << seconds << "s" << std::endl;
   std::cout << "Instructions per second:      "
