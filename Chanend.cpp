@@ -13,8 +13,6 @@
 #include <sstream>
 #include <cstring>
 
-#define DELAY 100
-
 void Chanend::debug() {
   std::cout << std::setw(6) << (uint64_t) getOwner().time << " ";
   std::cout << "[c" << getOwner().getParent().getCoreID();
@@ -111,6 +109,12 @@ bool Chanend::setData(ThreadState &thread, uint32_t value, ticks_t time)
   return true;
 }
 
+ticks_t Chanend::getLatency(Chanend *dest) {
+  unsigned sourceID = getOwner().getParent().getCoreNumber();
+  unsigned destID = dest->getOwner().getParent().getCoreNumber();
+  return latencyModel->calc(sourceID, destID);
+}
+
 Resource::ResOpResult Chanend::
 outt(ThreadState &thread, uint8_t value, ticks_t time)
 {
@@ -127,7 +131,8 @@ outt(ThreadState &thread, uint8_t value, ticks_t time)
   }
   //dest->receiveDataToken(time, value);
   TokenDelay *td = new DataTokenDelay(dest, value);
-  getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+DELAY);
+  getOwner().getParent().getParent()->getParent()->scheduleOther(*td, 
+      time+getLatency((Chanend*) dest));
   //debug(); std::cout << "Sent a data token at " << time << " with delay 100\n";
   return CONTINUE;
 }
@@ -155,7 +160,8 @@ out(ThreadState &thread, uint32_t value, ticks_t time)
   };
   //dest->receiveDataTokens(time, tokens, 4);
   TokenDelay *td = new DataTokensDelay(dest, tokens, 4);
-  getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+DELAY);
+  getOwner().getParent().getParent()->getParent()->scheduleOther(*td, 
+      time+getLatency((Chanend *) dest));
   //debug(); std::cout << "Sent 4 data tokens at "<<time<<" with delay "<<DELAY<<"\n";
   return CONTINUE;
 }
@@ -181,7 +187,8 @@ outct(ThreadState &thread, uint8_t value, ticks_t time)
   }  
   //dest->receiveCtrlToken(time, value);
   TokenDelay *td = new CtrlTokenDelay(dest, value);
-  getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+DELAY);
+  getOwner().getParent().getParent()->getParent()->scheduleOther(*td, 
+      time+getLatency((Chanend *) dest));
   //debug(); std::cout << "Sent a control token at " << time << " with delay " << DELAY << "\n";
   if (value == CT_END || value == CT_PAUSE) {
     inPacket = false;

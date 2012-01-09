@@ -68,7 +68,7 @@ public:
   const uint32_t ram_base;
   uint32_t vector_base;
   
-  Core(uint32_t RamSize, uint32_t RamBase) :
+  Core(uint32_t RamSize, uint32_t RamBase, std::auto_ptr<LatencyModel> latencyModel) :
     thread(new Thread[NUM_THREADS]),
     sync(new Synchroniser[NUM_SYNCS]),
     lock(new Lock[NUM_LOCKS]),
@@ -99,6 +99,7 @@ public:
     resource[RES_TYPE_CHANEND] = new Resource*[NUM_CHANENDS];
     for (unsigned i = 0; i < NUM_CHANENDS; i++) {
       resource[RES_TYPE_CHANEND][i] = &chanend[i];
+      chanend[i].setLatencyModel(latencyModel);
     }
     resourceNum[RES_TYPE_CHANEND] = NUM_CHANENDS;
 

@@ -49,6 +49,8 @@ add_executable(axe
   ChanEndpoint.cpp
   Chanend.h
   Chanend.cpp
+  LatencyModel.h
+  LatencyModel.cpp
   ClockBlock.h
   ClockBlock.cpp
   Lock.cpp

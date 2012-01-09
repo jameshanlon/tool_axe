@@ -6,10 +6,12 @@
 #ifndef _Chanend_h_
 #define _Chanend_h_
 
+#include <memory>
 #include "Resource.h"
 #include "ChanEndpoint.h"
 #include "ring_buffer.h"
 #include "Token.h"
+#include "LatencyModel.h"
 
 class Chanend : public EventableResource, public ChanEndpoint {
 private:
@@ -28,8 +30,10 @@ private:
   bool inPacket;
   /// Should be current packet be junked?
   bool junkPacket;
+  LatencyModel *latencyModel;
 
   void debug();
+  ticks_t getLatency(Chanend *dest);
 
   /// Update the channel end after the data is placed in the buffer.
   void update(ticks_t time);
@@ -100,6 +104,7 @@ public:
   }
 
   bool setData(ThreadState &thread, uint32_t value, ticks_t time);
+  void setLatencyModel(std::auto_ptr<LatencyModel> p) { latencyModel = p.get(); }
 
   ResOpResult outt(ThreadState &thread, uint8_t value, ticks_t time);
   ResOpResult outct(ThreadState &thread, uint8_t value, ticks_t time);

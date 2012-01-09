@@ -41,6 +41,7 @@
 #include "UartRx.h"
 #include "Property.h"
 #include "PortArg.h"
+#include "LatencyModel.h"
 
 #define XCORE_ELF_MACHINE 0xB49E
 
@@ -852,7 +853,7 @@ static long readNumberAttribute(xmlNode *node, const char *name)
 }
 
 static inline std::auto_ptr<Core>
-createCoreFromConfig(xmlNode *config)
+createCoreFromConfig(xmlNode *config, std::auto_ptr<LatencyModel> latencyModel)
 {
   uint32_t ram_size = RAM_SIZE;
   uint32_t ram_base = RAM_BASE;
@@ -860,7 +861,7 @@ createCoreFromConfig(xmlNode *config)
   xmlNode *ram = findChild(memoryController, "Ram");
   ram_base = readNumberAttribute(ram, "base");
   ram_size = readNumberAttribute(ram, "size");
-  std::auto_ptr<Core> core(new Core(ram_size, ram_base));
+  std::auto_ptr<Core> core(new Core(ram_size, ram_base, latencyModel));
   core->setCoreNumber(readNumberAttribute(config, "number"));
   if (xmlAttr *codeReference = findAttribute(config, "codeReference")) {
     core->setCodeReference((char*)codeReference->children->content);
@@ -870,7 +871,8 @@ createCoreFromConfig(xmlNode *config)
 
 static inline std::auto_ptr<Node>
 createNodeFromConfig(xmlNode *config,
-                     std::map<long,Node*> &nodeNumberMap)
+                     std::map<long,Node*> &nodeNumberMap,
+                     std::auto_ptr<LatencyModel> latencyModel)
 {
   long jtagID = readNumberAttribute(config, "jtagId");
   Node::Type nodeType;
@@ -885,7 +887,7 @@ createNodeFromConfig(xmlNode *config,
     if (child->type != XML_ELEMENT_NODE ||
         strcmp("Processor", (char*)child->name) != 0)
       continue;
-    node->addCore(createCoreFromConfig(child));
+    node->addCore(createCoreFromConfig(child, latencyModel));
   }
   node->setNodeID(nodeID);
   return node;
@@ -928,13 +930,14 @@ createSystemFromConfig(const char *filename, const XESector *configSector)
   xmlNode *root = xmlDocGetRootElement(doc);
   xmlNode *system = findChild(root, "System");
   xmlNode *nodes = findChild(system, "Nodes");
+  std::auto_ptr<LatencyModel> latencyModel(new LatencyModel(LatencyModel::NONE));
   std::auto_ptr<SystemState> systemState(new SystemState);
   std::map<long,Node*> nodeNumberMap;
   for (xmlNode *child = nodes->children; child; child = child->next) {
     if (child->type != XML_ELEMENT_NODE ||
         strcmp("Node", (char*)child->name) != 0)
       continue;
-    systemState->addNode(createNodeFromConfig(child, nodeNumberMap));
+    systemState->addNode(createNodeFromConfig(child, nodeNumberMap, latencyModel));
   }
   xmlNode *jtag = findChild(system, "JtagChain");
   unsigned jtagIndex = 0;
@@ -1033,6 +1036,7 @@ readXE(const char *filename, SymbolInfo &SI,
 static inline std::auto_ptr<SystemState>
 createSESystem(const char *filename, int numCores)
 {
+  std::auto_ptr<LatencyModel> latencyModel(new LatencyModel(LatencyModel::SP_MESH));
   std::auto_ptr<SystemState> systemState(new SystemState);
   std::map<long, Node*> nodeNumberMap;
 
@@ -1046,7 +1050,7 @@ createSESystem(const char *filename, int numCores)
   for (int i=0; i<numCores; i++) {
     uint32_t ram_size = RAM_SIZE;
     uint32_t ram_base = RAM_BASE;
-    std::auto_ptr<Core> core(new Core(ram_size, ram_base));
+    std::auto_ptr<Core> core(new Core(ram_size, ram_base, latencyModel));
     core->setCoreNumber(i);
     node->addCore(core);
     //std::cout<<"Created core "<<i<<"\n";
