@@ -1,20 +1,27 @@
 #ifndef _LatencyModel_h_
 #define _LatencyModel_h_
 
+#include <map>
 #include "Config.h"
 
 class LatencyModel {
 public:
-  enum Type {
+  enum ModelType {
     SP_MESH,
     SP_TORUS,
     NONE
   };
-  LatencyModel(Type t) : type(t) {}
-  ticks_t calc(unsigned int s, unsigned int t); 
+  LatencyModel(ModelType t, int n);
+  ticks_t calc(int s, int t); 
 
 private:
-  Type type;
+  ModelType type;
+  int numCores;
+  int numChips;
+  int nDim; // sqrt(num cores)
+  int mDim; // sqrt(chips per core)
+  int oDim; // nDim / oDim
+  std::map<std::pair<int, int>, ticks_t> cache;
 };
 
 #endif // _LatencyModel_h_

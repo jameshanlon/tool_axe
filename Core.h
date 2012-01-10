@@ -68,7 +68,7 @@ public:
   const uint32_t ram_base;
   uint32_t vector_base;
   
-  Core(uint32_t RamSize, uint32_t RamBase, std::auto_ptr<LatencyModel> latencyModel) :
+  Core(uint32_t RamSize, uint32_t RamBase, LatencyModel *latencyModel) :
     thread(new Thread[NUM_THREADS]),
     sync(new Synchroniser[NUM_SYNCS]),
     lock(new Lock[NUM_LOCKS]),

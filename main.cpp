@@ -853,7 +853,7 @@ static long readNumberAttribute(xmlNode *node, const char *name)
 }
 
 static inline std::auto_ptr<Core>
-createCoreFromConfig(xmlNode *config, std::auto_ptr<LatencyModel> latencyModel)
+createCoreFromConfig(xmlNode *config, LatencyModel *latencyModel)
 {
   uint32_t ram_size = RAM_SIZE;
   uint32_t ram_base = RAM_BASE;
@@ -872,7 +872,7 @@ createCoreFromConfig(xmlNode *config, std::auto_ptr<LatencyModel> latencyModel)
 static inline std::auto_ptr<Node>
 createNodeFromConfig(xmlNode *config,
                      std::map<long,Node*> &nodeNumberMap,
-                     std::auto_ptr<LatencyModel> latencyModel)
+                     LatencyModel *latencyModel)
 {
   long jtagID = readNumberAttribute(config, "jtagId");
   Node::Type nodeType;
@@ -930,14 +930,15 @@ createSystemFromConfig(const char *filename, const XESector *configSector)
   xmlNode *root = xmlDocGetRootElement(doc);
   xmlNode *system = findChild(root, "System");
   xmlNode *nodes = findChild(system, "Nodes");
-  std::auto_ptr<LatencyModel> latencyModel(new LatencyModel(LatencyModel::NONE));
+  LatencyModel *latencyModel = new LatencyModel(LatencyModel::NONE, 0);
   std::auto_ptr<SystemState> systemState(new SystemState);
   std::map<long,Node*> nodeNumberMap;
   for (xmlNode *child = nodes->children; child; child = child->next) {
     if (child->type != XML_ELEMENT_NODE ||
         strcmp("Node", (char*)child->name) != 0)
       continue;
-    systemState->addNode(createNodeFromConfig(child, nodeNumberMap, latencyModel));
+    systemState->addNode(createNodeFromConfig(
+          child, nodeNumberMap, latencyModel));
   }
   xmlNode *jtag = findChild(system, "JtagChain");
   unsigned jtagIndex = 0;
@@ -1036,7 +1037,7 @@ readXE(const char *filename, SymbolInfo &SI,
 static inline std::auto_ptr<SystemState>
 createSESystem(const char *filename, int numCores)
 {
-  std::auto_ptr<LatencyModel> latencyModel(new LatencyModel(LatencyModel::SP_MESH));
+  LatencyModel *latencyModel = new LatencyModel(LatencyModel::SP_MESH, numCores);
   std::auto_ptr<SystemState> systemState(new SystemState);
   std::map<long, Node*> nodeNumberMap;
 

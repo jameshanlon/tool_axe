@@ -104,7 +104,7 @@ public:
   }
 
   bool setData(ThreadState &thread, uint32_t value, ticks_t time);
-  void setLatencyModel(std::auto_ptr<LatencyModel> p) { latencyModel = p.get(); }
+  void setLatencyModel(LatencyModel *p);
 
   ResOpResult outt(ThreadState &thread, uint8_t value, ticks_t time);
   ResOpResult outct(ThreadState &thread, uint8_t value, ticks_t time);

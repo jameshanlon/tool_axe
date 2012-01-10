@@ -57,6 +57,12 @@
 /// Number of cycles a memory access takes to complete
 #define MEMORY_ACCESS_CYCLES 0
 
+// Latency model parameters
+#define CORES_PER_CHIP   4
+#define LATENCY_THREAD   1  // Between threads
+#define LATENCY_ON_CHIP  5  // 1 hop
+#define LATENCY_OFF_CHIP 20 // 1 hop
+
 typedef uint64_t ticks_t;
 
 #define EXPENSIVE_CHECKS 0
