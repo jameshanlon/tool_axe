@@ -1082,8 +1082,8 @@ readSE(const char *filename, SymbolInfo &SI,
   addToCoreMap(coreMap, *system);
 
   // Pick out the master and slave Elf sectors
-  const XEElfSector *masterElfSector;
-  const XEElfSector *slaveElfSector;
+  const XEElfSector *masterElfSector = NULL;
+  const XEElfSector *slaveElfSector = NULL;
   for (std::vector<const XESector *>::const_reverse_iterator
        it = se.getSectors().rbegin(), end = se.getSectors().rend(); it != end;
        ++it) {
