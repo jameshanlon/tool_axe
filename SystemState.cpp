@@ -150,7 +150,7 @@ void SystemState::dump(double elapsedTime) {
   double seconds = (double) maxTime / 100000000.0;
   double opsPerSec = (double) totalCount / seconds;
   double gOpsPerSec = opsPerSec / 1000000000.0;
-  long peakOpsPerSec = (long) numCores * CYCLES_PER_SEC;
+  long peakOpsPerSec = CYCLES_PER_SEC;
   long peakGOpsPerSec = peakOpsPerSec / 1000000000.0;
   double perCentPeak = (100.0/(double) peakOpsPerSec) * opsPerSec;
   std::cout << std::endl;
