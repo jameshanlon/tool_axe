@@ -38,12 +38,15 @@
  NUM_16BIT_PORTS + NUM_32BIT_PORTS)
 
 /// Log base 2 of memory size in bytes.
-#define RAM_SIZE_LOG 16
+#define RAM_SIZE_LOG 16 // 0.07MB
+//#define RAM_SIZE_LOG 20 // 1.05MB
+//#define RAM_SIZE_LOG 22 // 4.19MB
 
 /// Default size of ram in bytes
 #define RAM_SIZE (1 << RAM_SIZE_LOG)
 /// Default ram base
-#define RAM_BASE RAM_SIZE
+//#define RAM_BASE RAM_SIZE
+#define RAM_BASE (1 << 16)
 
 /// Size of the (input) buffer in a chanend.
 #define CHANEND_BUFFER_SIZE 8
@@ -51,17 +54,20 @@
 /// Number of processor cycles per 100MHz timer tick
 #define CYCLES_PER_TICK 4
 
-  // Assume 10ns cycle (400Mhz clock)
+// Assume 10ns cycle (400Mhz clock)
 #define CYCLES_PER_SEC (400*1000000)
 
 /// Number of cycles a memory access takes to complete
-#define MEMORY_ACCESS_CYCLES 0
+#define MEMORY_ACCESS_CYCLES 1 
 
 // Latency model parameters
-#define CORES_PER_CHIP   4
-#define LATENCY_THREAD   1  // Between threads
-#define LATENCY_ON_CHIP  5  // 1 hop
-#define LATENCY_OFF_CHIP 20 // 1 hop
+#define SWITCHES_PER_CHIP 1 // Must be a positive power of 2
+#define CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
+#define CORES_PER_CHIP    (SWITCHES_PER_CHIP*CORES_PER_SWITCH)
+#define LATENCY_SWITCH    3  // Latency in and out of the switch
+#define LATENCY_THREAD    1  // Between threads
+#define LATENCY_ON_CHIP   5  // 1 hop
+#define LATENCY_OFF_CHIP  10 // 1 hop
 
 typedef uint64_t ticks_t;
 

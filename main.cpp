@@ -1037,7 +1037,7 @@ readXE(const char *filename, SymbolInfo &SI,
 static inline std::auto_ptr<SystemState>
 createSESystem(const char *filename, int numCores)
 {
-  LatencyModel *latencyModel = new LatencyModel(LatencyModel::SP_MESH, numCores);
+  LatencyModel *latencyModel = new LatencyModel(LatencyModel::SP_TORUS, numCores);
   std::auto_ptr<SystemState> systemState(new SystemState);
   std::map<long, Node*> nodeNumberMap;
 

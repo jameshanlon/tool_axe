@@ -9,6 +9,8 @@ public:
   enum ModelType {
     SP_MESH,
     SP_TORUS,
+    SP_CLOS,
+    SP_FATTREE,
     NONE
   };
   LatencyModel(ModelType t, int n);
@@ -17,11 +19,11 @@ public:
 private:
   ModelType type;
   int numCores;
-  int numChips;
-  int nDim; // sqrt(num cores)
-  int mDim; // sqrt(chips per core)
-  int oDim; // nDim / oDim
   std::map<std::pair<int, int>, ticks_t> cache;
+  // Dimensions for mesh and tori
+  int switchDim; // Number of switches in each dimension of a chip
+  int chipsDim;  // Number of chips in each dimension of the system
+  calc2DArray(ModelType t, int s, int t);
 };
 
 #endif // _LatencyModel_h_
