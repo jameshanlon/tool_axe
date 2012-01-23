@@ -15,7 +15,7 @@
  */
 
 #define MAX_CACHED 100000
-#define DEBUG 1
+//#define DEBUG 
 
 LatencyModel::LatencyModel(ModelType t, int n) : 
     type(t), numCores(n) {

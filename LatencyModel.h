@@ -23,7 +23,7 @@ private:
   // Dimensions for mesh and tori
   int switchDim; // Number of switches in each dimension of a chip
   int chipsDim;  // Number of chips in each dimension of the system
-  calc2DArray(ModelType t, int s, int t);
+  int calc2DArray(int s, int t);
 };
 
 #endif // _LatencyModel_h_

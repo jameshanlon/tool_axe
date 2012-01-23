@@ -60,14 +60,16 @@
 /// Number of cycles a memory access takes to complete
 #define MEMORY_ACCESS_CYCLES 1 
 
-// Latency model parameters
-#define SWITCHES_PER_CHIP 1 // Must be a positive power of 2
-#define CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
-#define CORES_PER_CHIP    (SWITCHES_PER_CHIP*CORES_PER_SWITCH)
+// Latency model parameters (cycles)
 #define LATENCY_SWITCH    3  // Latency in and out of the switch
 #define LATENCY_THREAD    1  // Between threads
 #define LATENCY_ON_CHIP   5  // 1 hop
 #define LATENCY_OFF_CHIP  10 // 1 hop
+
+// 2D mesh and torus topology parameters
+#define SWITCHES_PER_CHIP 4 // Must be a positive power of 2
+#define CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
+#define CORES_PER_CHIP    (SWITCHES_PER_CHIP*CORES_PER_SWITCH)
 
 typedef uint64_t ticks_t;
 
