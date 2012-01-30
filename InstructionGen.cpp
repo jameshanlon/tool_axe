@@ -154,7 +154,7 @@ private:
   std::string code;
   std::string transformStr;
   std::string reverseTransformStr;
-  unsigned cycles;
+  std::string cyclesStr;
   bool sync;
   bool canEvent;
   bool unimplemented;
@@ -165,13 +165,13 @@ public:
               const std::vector<OpType> &ops,
               const std::string &f,
               const std::string &c,
-              unsigned cy) :
+              const std::string &cy) :
     name(n),
     size(s),
     operands(ops),
     format(f),
     code(c),
-    cycles(cy),
+    cyclesStr(cy),
     sync(false),
     canEvent(false),
     unimplemented(false),
@@ -186,7 +186,7 @@ public:
   const std::string &getCode() const { return code; }
   const std::string &getTransform() const { return transformStr; }
   const std::string &getReverseTransform() const { return reverseTransformStr; }
-  unsigned getCycles() const { return cycles; }
+  const std::string &getCycles() const { return cyclesStr; }
   bool getSync() const { return sync; }
   bool getCanEvent() const { return canEvent; }
   bool getUnimplemented() const { return unimplemented; }
@@ -202,8 +202,8 @@ public:
     reverseTransformStr = rt;
     return *this;
   }
-  Instruction &setCycles(unsigned value) {
-    cycles = value;
+  Instruction &setCycles(const std::string &s) {
+    cyclesStr = s;
     return *this;
   }
   Instruction &setSync() {
@@ -230,7 +230,7 @@ public:
   void add(Instruction *i) { refs.push_back(i); }
   InstructionRefs &addImplicitOp(Register reg, OpType type);
   InstructionRefs &transform(const std::string &t, const std::string &rt);
-  InstructionRefs &setCycles(unsigned value);
+  InstructionRefs &setCycles(const std::string &s);
   InstructionRefs &setSync();
   InstructionRefs &setCanEvent();
   InstructionRefs &setUnimplemented();
@@ -257,11 +257,11 @@ transform(const std::string &t, const std::string &rt)
 }
 
 InstructionRefs &InstructionRefs::
-setCycles(unsigned value)
+setCycles(const std::string &s)
 {
   for (std::vector<Instruction*>::iterator it = refs.begin(), e = refs.end();
        it != e; ++it) {
-    (*it)->setCycles(value);
+    (*it)->setCycles(s);
   }
   return *this;
 }
@@ -303,7 +303,7 @@ Instruction &inst(const std::string &name,
                   const std::vector<OpType> &operands,
                   const std::string &format,
                   const std::string &code,
-                  unsigned cycles)
+                  const std::string &cycles)
 {
   instructions.push_back(new Instruction(name,
                                          size,
@@ -809,19 +809,13 @@ static void emitInstList()
   std::cout << "#endif //EMIT_INSTRUCTION_LIST\n";
 }
 
-#define INSTRUCTION_CYCLES 4
-/// Time to execute a divide instruction in 400MHz clock cycles. This is
-/// approximate. The XCore divide unit divides 1 bit per cycle and is shared
-/// between threads.
-#define DIV_CYCLES 32
-
 Instruction &
 f3r(const std::string &name,
     const std::string &format,
     const std::string &code)
 {
   return inst(name + "_3r", 2, ops(out, in, in), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -830,7 +824,7 @@ f2rus(const std::string &name,
       const std::string &code)
 {
   return inst(name + "_2rus", 2, ops(out, in, imm), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -839,7 +833,7 @@ f2rus_in(const std::string &name,
          const std::string &code)
 {
   return inst(name + "_2rus", 2, ops(in, in, imm), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -848,7 +842,7 @@ fl3r(const std::string &name,
      const std::string &code)
 {
   return inst(name + "_l3r", 4, ops(out, in, in), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -857,7 +851,7 @@ fl3r_in(const std::string &name,
         const std::string &code)
 {
   return inst(name + "_l3r", 4, ops(in, in, in), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -866,7 +860,7 @@ fl3r_inout(const std::string &name,
            const std::string &code)
 {
   return inst(name + "_l3r", 4, ops(inout, in, in), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -875,7 +869,7 @@ fl2rus(const std::string &name,
        const std::string &code)
 {
   return inst(name + "_l2rus", 4, ops(out, in, imm), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -884,7 +878,7 @@ fl2rus_in(const std::string &name,
           const std::string &code)
 {
   return inst(name + "_l2rus", 4, ops(in, in, imm), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -893,7 +887,7 @@ fl4r_inout_inout(const std::string &name,
                  const std::string &code)
 {
   return inst(name + "_l4r", 4, ops(inout, in, in, inout), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -902,7 +896,7 @@ fl4r_out_inout(const std::string &name,
                  const std::string &code)
 {
   return inst(name + "_l4r", 4, ops(out, in, in, inout), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -911,7 +905,7 @@ fl5r(const std::string &name,
      const std::string &code)
 {
   return inst(name + "_l5r", 4, ops(out, in, in, out, in), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -920,7 +914,7 @@ fl6r(const std::string &name,
      const std::string &code)
 {
   return inst(name + "_l6r", 4, ops(out, in, in, out, in, in), format, code,
-              INSTRUCTION_CYCLES);
+              "INSTRUCTION_CYCLES");
 }
 
 InstructionRefs
@@ -930,9 +924,9 @@ fru6_out(const std::string &name,
 {
   InstructionRefs refs;
   refs.add(&inst(name + "_ru6", 2, ops(out, imm), format, code,
-                 INSTRUCTION_CYCLES));
+                 "INSTRUCTION_CYCLES"));
   refs.add(&inst(name + "_lru6", 4, ops(out, imm), format, code,
-                 INSTRUCTION_CYCLES));
+                 "INSTRUCTION_CYCLES"));
   return refs;
 }
 
@@ -943,9 +937,9 @@ fru6_in(const std::string &name,
 {
   InstructionRefs refs;
   refs.add(&inst(name + "_ru6", 2, ops(in, imm), format, code,
-                 INSTRUCTION_CYCLES));
+                 "INSTRUCTION_CYCLES"));
   refs.add(&inst(name + "_lru6", 4, ops(in, imm), format, code,
-                 INSTRUCTION_CYCLES));
+                 "INSTRUCTION_CYCLES"));
   return refs;
 }
 
@@ -955,8 +949,10 @@ fu6(const std::string &name,
     const std::string &code)
 {
   InstructionRefs refs;
-  refs.add(&inst(name + "_u6", 2, ops(imm), format, code, INSTRUCTION_CYCLES));
-  refs.add(&inst(name + "_lu6", 4, ops(imm), format, code, INSTRUCTION_CYCLES));
+  refs.add(&inst(name + "_u6", 2, ops(imm), format, code, 
+        "INSTRUCTION_CYCLES"));
+  refs.add(&inst(name + "_lu6", 4, ops(imm), format, code, 
+        "INSTRUCTION_CYCLES"));
   return refs;
 }
 
@@ -966,8 +962,10 @@ fu10(const std::string &name,
      const std::string &code)
 {
   InstructionRefs refs;
-  refs.add(&inst(name + "_u10", 2, ops(imm), format, code, INSTRUCTION_CYCLES));
-  refs.add(&inst(name + "_lu10", 4, ops(imm), format, code, INSTRUCTION_CYCLES));
+  refs.add(&inst(name + "_u10", 2, ops(imm), format, code, 
+        "INSTRUCTION_CYCLES"));
+  refs.add(&inst(name + "_lu10", 4, ops(imm), format, code, 
+        "INSTRUCTION_CYCLES"));
   return refs;
 }
 
@@ -976,7 +974,8 @@ f2r(const std::string &name,
     const std::string &format,
     const std::string &code)
 {
-  return inst(name + "_2r", 2, ops(out, in), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_2r", 2, ops(out, in), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -984,7 +983,8 @@ f2r_in(const std::string &name,
        const std::string &format,
        const std::string &code)
 {
-  return inst(name + "_2r", 2, ops(in, in), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_2r", 2, ops(in, in), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -992,7 +992,8 @@ f2r_inout(const std::string &name,
           const std::string &format,
           const std::string &code)
 {
-  return inst(name + "_2r", 2, ops(inout, in), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_2r", 2, ops(inout, in), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1000,7 +1001,8 @@ frus(const std::string &name,
      const std::string &format,
      const std::string &code)
 {
-  return inst(name + "_rus", 2, ops(out, imm), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_rus", 2, ops(out, imm), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1008,7 +1010,8 @@ frus_in(const std::string &name,
         const std::string &format,
         const std::string &code)
 {
-  return inst(name + "_rus", 2, ops(in, imm), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_rus", 2, ops(in, imm), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1016,8 +1019,8 @@ frus_inout(const std::string &name,
            const std::string &format,
            const std::string &code)
 {
-  return inst(name + "_rus", 2, ops(inout, imm), format, code,
-              INSTRUCTION_CYCLES);
+  return inst(name + "_rus", 2, ops(inout, imm), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1025,7 +1028,8 @@ fl2r(const std::string &name,
      const std::string &format,
      const std::string &code)
 {
-  return inst(name + "_l2r", 4, ops(out, in), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_l2r", 4, ops(out, in), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1033,7 +1037,8 @@ fl2r_in(const std::string &name,
         const std::string &format,
         const std::string &code)
 {
-  return inst(name + "_l2r", 4, ops(in, in), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_l2r", 4, ops(in, in), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1041,7 +1046,8 @@ f1r(const std::string &name,
     const std::string &format,
     const std::string &code)
 {
-  return inst(name + "_1r", 2, ops(in), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_1r", 2, ops(in), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1049,7 +1055,8 @@ f1r_out(const std::string &name,
         const std::string &format,
         const std::string &code)
 {
-  return inst(name + "_1r", 2, ops(out), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_1r", 2, ops(out), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1057,7 +1064,8 @@ f0r(const std::string &name,
     const std::string &format,
     const std::string &code)
 {
-  return inst(name + "_0r", 2, ops(), format, code, INSTRUCTION_CYCLES);
+  return inst(name + "_0r", 2, ops(), format, code, 
+      "INSTRUCTION_CYCLES");
 }
 
 Instruction &
@@ -1065,7 +1073,7 @@ pseudoInst(const std::string &name,
            const std::string &format,
            const std::string &code)
 {
-  return inst(name, 0, ops(), format, code, 0);
+  return inst(name, 0, ops(), format, code, "");
 }
 
 void add()
@@ -1108,7 +1116,7 @@ void add()
       "  %exception(ET_LOAD_STORE, Addr)"
       "}\n"
       "%0 = LOAD_WORD(PhyAddr);\n")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f2rus("LDW", "ldw %0, %1[%2]",
         "uint32_t Addr = %1 + %2;\n"
         "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1117,7 +1125,7 @@ void add()
         "}\n"
         "%0 = LOAD_WORD(PhyAddr);\n")
     .transform("%2 = %2 << 2;", "%2 = %2 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f3r("LD16S", "ld16s %0, %1[%2]",
       "uint32_t Addr = %1 + (%2 << 1);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1125,7 +1133,7 @@ void add()
       "  %exception(ET_LOAD_STORE, Addr)"
       "}\n"
       "%0 = signExtend(LOAD_SHORT(PhyAddr), 16);\n")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f3r("LD8U", "ld8u %0, %1[%2]",
       "uint32_t Addr = %1 + %2;\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1133,7 +1141,7 @@ void add()
       "  %exception(ET_LOAD_STORE, Addr)"
       "}\n"
       "%0 = LOAD_BYTE(PhyAddr);\n")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f2rus_in("STW", "stw %0, %1[%2]",
            "uint32_t Addr = %1 + %2;\n"
            "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1142,7 +1150,7 @@ void add()
            "}\n"
            "STORE_WORD(%0, PhyAddr);\n")
     .transform("%2 = %2 << 2;", "%2 = %2 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   // TSETR needs special handling as one operands is not a register on the
   // current thread.
   inst("TSETR_3r", 2, ops(imm, in, in), "set t[%2]:r%0, %1",
@@ -1152,7 +1160,7 @@ void add()
        "} else {\n"
        "  %exception(ET_ILLEGAL_RESOURCE, resID);\n"
        "}",
-       INSTRUCTION_CYCLES);
+       "INSTRUCTION_CYCLES");
   fl3r("LDAWF", "ldaw %0, %1[%2]", "%0 = %1 + (%2 << 2);");
   fl2rus("LDAWF", "ldaw %0, %1[%2]", "%0 = %1 + %2;")
          .transform("%2 = %2 << 2;", "%2 = %2 >> 2;");
@@ -1168,7 +1176,7 @@ void add()
           "  %exception(ET_LOAD_STORE, Addr)"
           "}\n"
           "STORE_WORD(%0, PhyAddr);\n")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fl3r_in("ST16", "st16 %0, %1[%2]",
           "uint32_t Addr = %1 + (%2 << 1);\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1176,7 +1184,7 @@ void add()
           "  %exception(ET_LOAD_STORE, Addr)"
           "}\n"
           "STORE_SHORT(%0, PhyAddr);\n")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fl3r_in("ST8", "st8 %0, %1[%2]",
           "uint32_t Addr = %1 + %2;\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1184,7 +1192,7 @@ void add()
           "  %exception(ET_LOAD_STORE, Addr)"
           "}\n"
           "STORE_BYTE(%0, PhyAddr);\n")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fl3r("MUL", "mul %0, %1, %2", "%0 = %1 * %2;");
   fl3r("DIVS", "divs %0, %1, %2",
        "if (%2 == 0 ||\n"
@@ -1192,26 +1200,26 @@ void add()
        "  %exception(ET_ARITHMETIC, 0)"
        "}\n"
        "%0 = (int32_t)%1 / (int32_t)%2;")
-    .setCycles(DIV_CYCLES);
+    .setCycles("DIV_CYCLES");
   fl3r("DIVU", "divu %0, %1, %2",
        "if (%2 == 0) {\n"
        "  %exception(ET_ARITHMETIC, 0)"
        "}\n"
        "%0 = %1 / %2;")
-  .setCycles(DIV_CYCLES);
+  .setCycles("DIV_CYCLES");
   fl3r("REMS", "rems %0, %1, %2",
        "if (%2 == 0 ||\n"
        "    (%1 == 0x80000000 && %2 == 0xffffffff)) {\n"
        "  %exception(ET_ARITHMETIC, 0)"
        "}\n"
        "%0 = (int32_t)%1 %% (int32_t)%2;")
-    .setCycles(DIV_CYCLES);
+    .setCycles("DIV_CYCLES");
   fl3r("REMU", "remu %0, %1, %2",
        "if (%2 == 0) {\n"
        "  %exception(ET_ARITHMETIC, 0)"
        "}\n"
        "%0 = %1 %% %2;")
-    .setCycles(DIV_CYCLES);
+    .setCycles("DIV_CYCLES");
   fl3r("XOR", "xor %0, %1, %2", "%0 = %1 ^ %2;");
   fl3r("ASHR", "ashr %0, %1, %2",
        "if (%2 >= 32) {\n"
@@ -1297,7 +1305,7 @@ void add()
        "dividend = %1 + ((uint64_t)%4 << 32);\n"
        "%0 = (uint32_t)(dividend / %2);\n"
        "%3 = (uint32_t)(dividend %% %2);\n")
-    .setCycles(DIV_CYCLES);
+    .setCycles("DIV_CYCLES");
   fl6r("LMUL", "lmul %0, %3, %1, %2, %4, %5",
        "uint64_t Result = (uint64_t)%1 * %2 + %4 + %5;\n"
        "%0 = (int32_t)(Result >> 32);"
@@ -1315,7 +1323,7 @@ void add()
            "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(dp, in)
     .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fru6_out("LDWCP", "ldw %0, cp[%{cp}1]",
            "uint32_t Addr = %2 + %1;\n"
            "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1325,7 +1333,7 @@ void add()
            "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(cp, in)
     .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fru6_out("LDWSP", "ldw %0, sp[%1]",
            "uint32_t Addr = %2 + %1;\n"
            "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1335,7 +1343,7 @@ void add()
            "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(sp, in)
     .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fru6_in("STWDP", "stw %0, dp[%{dp}1]",
           "uint32_t Addr = %2 + %1;\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1345,7 +1353,7 @@ void add()
           "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(dp, in)
     .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fru6_in("STWSP", "stw %0, sp[%1]",
           "uint32_t Addr = %2 + %1;\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1355,7 +1363,7 @@ void add()
           "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(sp, in)
     .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fru6_out("LDAWSP", "ldaw %0, sp[%1]",
            "%0 = %2 + %1;")
     .addImplicitOp(sp, in)
@@ -1427,7 +1435,7 @@ void add()
     .addImplicitOp(sp, inout)
     .addImplicitOp(lr, in)
     .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fu6("RETSP", "retsp %0",
       "uint32_t target;\n"
       "if (%0 > 0) {\n"
@@ -1451,7 +1459,7 @@ void add()
     .addImplicitOp(lr, inout)
     .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
     // retsp always causes an fnop.
-    .setCycles(2 * INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("(2 * INSTRUCTION_CYCLES) + MEMORY_ACCESS_CYCLES");
   fu6("KRESTSP", "krestsp %0",
       "uint32_t Addr = %1 + %0;\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1463,7 +1471,7 @@ void add()
     .addImplicitOp(sp, inout)
     .addImplicitOp(ksp, out)
     .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fu6("KENTSP", "kentsp %0",
       "uint32_t PhyAddr = PHYSICAL_ADDR(%2);\n"
       "if (!CHECK_ADDR_WORD(PhyAddr)) {\n"
@@ -1474,7 +1482,7 @@ void add()
     .addImplicitOp(sp, inout)
     .addImplicitOp(ksp, in)
     .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   fu6("BRFU", "bu %0", "%pc = %0;")
     .transform("%0 = %pc + %0;", "%0 = %0 - %pc;");
   fu6("BRFU_illegal", "bu %0", "%exception(ET_ILLEGAL_PC, %0)")
@@ -1515,7 +1523,7 @@ void add()
     .addImplicitOp(lr, out)
     .addImplicitOp(r11, in)
     // BLAT always causes an fnop.
-    .setCycles(2 * INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("(2 * INSTRUCTION_CYCLES) + MEMORY_ACCESS_CYCLES");
   fu6("KCALL", "kcall %0", "%kcall(%0)");
   fu6("GETSR", "getsr %1, %0", "%1 = %0 & (uint32_t) %2.to_ulong();")
     .addImplicitOp(r11, out)
@@ -1530,7 +1538,7 @@ void add()
     .addImplicitOp(r11, out)
     .addImplicitOp(cp, in)
     .transform("%0 = %0 << 2;", "%0 = %0 >> 2;")
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   // TODO could be optimised to %1 = ram_base + %0
   fu10("LDAPF", "ldap %1, %0", "%1 = FROM_PC(%pc) + %0;")
     .addImplicitOp(r11, out)
@@ -1575,7 +1583,7 @@ void add()
     .addImplicitOp(lr, out)
     .addImplicitOp(cp, in)
     // BLACP always causes an fnop.
-    .setCycles(2 * INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("(2 * INSTRUCTION_CYCLES) + MEMORY_ACCESS_CYCLES");
   f2r("NOT", "not %0, %1", "%0 = ~%1;");
   f2r("NEG", "neg %0, %1", "%0 = -%1;");
   frus_inout("SEXT", "sext %0, %1", "%0 = signExtend(%0, %1);");
@@ -2195,7 +2203,7 @@ void add()
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(spc, out)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("LDSSR", "ldw %0, sp[2]", 
       "uint32_t Addr = %1 + (2 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2205,7 +2213,7 @@ void add()
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(ssr, out)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("LDSED", "ldw %0, sp[3]", 
       "uint32_t Addr = %1 + (3 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2215,7 +2223,7 @@ void add()
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(sed, out)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("LDET", "ldw %0, sp[4]", 
       "uint32_t Addr = %1 + (4 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2225,7 +2233,7 @@ void add()
       "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(et, out)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("STSPC", "stw %0, sp[1]", 
       "uint32_t Addr = %1 + (1 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2235,7 +2243,7 @@ void add()
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(spc, in)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("STSSR", "stw %0, sp[2]", 
       "uint32_t Addr = %1 + (2 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2245,7 +2253,7 @@ void add()
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(ssr, in)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("STSED", "stw %0, sp[3]", 
       "uint32_t Addr = %1 + (3 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2255,7 +2263,7 @@ void add()
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(sed, in)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("STET", "stw %0, sp[4]", 
       "uint32_t Addr = %1 + (4 << 2);\n"
       "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -2265,7 +2273,7 @@ void add()
       "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(et, in)
     .addImplicitOp(sp, in)
-    .setCycles(INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES);
+    .setCycles("INSTRUCTION_CYCLES + MEMORY_ACCESS_CYCLES");
   f0r("FREET", "freet", "").setCustom();
   f0r("DCALL", "dcall", "").setUnimplemented();
   f0r("DRET", "dret", "").setUnimplemented();

@@ -57,6 +57,14 @@
 // Assume 10ns cycle (400Mhz clock)
 #define CYCLES_PER_SEC (400*1000000)
 
+// Time to execute an instruction
+#define INSTRUCTION_CYCLES CYCLES_PER_TICK
+
+// Time to execute a divide instruction in 400MHz clock cycles. This is
+// approximate. The XCore divide unit divides 1 bit per cycle and is shared
+// between threads.
+#define DIV_CYCLES 32
+
 /// Number of cycles a memory access takes to complete
 #define MEMORY_ACCESS_CYCLES 1 
 
@@ -67,7 +75,7 @@
 #define LATENCY_OFF_CHIP  10 // 1 hop
 
 // 2D mesh and torus topology parameters
-#define SWITCHES_PER_CHIP 4 // Must be a positive power of 2
+#define SWITCHES_PER_CHIP 1 // Must be a positive power of 2
 #define CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
 #define CORES_PER_CHIP    (SWITCHES_PER_CHIP*CORES_PER_SWITCH)
 

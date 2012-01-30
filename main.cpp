@@ -786,8 +786,6 @@ do { \
   UPDATE_CACHED(); \
 } while(0)
 
-#define INSTRUCTION_CYCLES 4
-
 typedef std::vector<std::pair<PortArg, PortArg> > LoopbackPorts;
 
 static bool
