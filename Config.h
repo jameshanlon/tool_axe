@@ -129,7 +129,7 @@ class Config {
       latencyOnChip   = 0;
       latencyOffChip  = 0;
     }
-    void read(const std::string &file);
+    int read(const std::string &file);
     void display();
 };
 

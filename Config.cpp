@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <string.h>
 
 #include "Config.h"
 
@@ -18,14 +19,14 @@ do { \
   std::cout << val << std::endl; \
 } while(0)
 
-void Config::read(const std::string &file) {
+int Config::read(const std::string &file) {
   FILE *fp = fopen(file.c_str(), "r");
   char line[BUF_LEN];
   char str[BUF_LEN];
 
   if(!fp) {
     std::cout << "No config file.\n";
-    std::exit(1);
+    return 0;
   }
 
   // Read configuration parameters
@@ -44,6 +45,8 @@ void Config::read(const std::string &file) {
   ramSize = 1 << ramSizeLog;
   ramBase = 1 << DEFAULT_RAM_SIZE_LOG;
   coresPerChip = switchesPerChip * coresPerSwitch;
+
+  return 1;
 }
 
 void Config::display() {

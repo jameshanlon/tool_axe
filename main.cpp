@@ -1661,8 +1661,9 @@ main(int argc, char **argv) {
         printUsage(argv[0]);
         return 1;
       }
-      cfg.read(argv[i + 1]);
-      cfg.display();
+      if(!cfg.read(argv[i + 1])) 
+        return 1;
+      //cfg.display();
       i++;
     } else if (arg == "--vcd") {
       if (i + 1 > argc) {
