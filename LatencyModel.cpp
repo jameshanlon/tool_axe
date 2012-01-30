@@ -17,37 +17,37 @@
 #define MAX_CACHED 100000
 //#define DEBUG 
 
-LatencyModel::LatencyModel(ModelType t, int n) : 
-    type(t), numCores(n) {
-  switchDim = (int) sqrt(SWITCHES_PER_CHIP);
-  chipsDim = (numCores/CORES_PER_SWITCH) / switchDim;
+LatencyModel::LatencyModel(const Config &cfg, ModelType type, int numCores) : 
+    cfg(cfg), type(type), numCores(numCores) {
+  switchDim = (int) sqrt(cfg.switchesPerChip);
+  chipsDim = (numCores/cfg.coresPerSwitch) / switchDim;
 #ifdef DEBUG
   std::cout << "Num cores:         " << numCores << std::endl;
-  std::cout << "Switches per chip: " << SWITCHES_PER_CHIP 
+  std::cout << "Switches per chip: " << cfg.switchesPerChip
     << " (" << switchDim << " x " << switchDim << ")" << std::endl;
-  std::cout << "Cores per switch:  " << CORES_PER_SWITCH << std::endl;
-  std::cout << "Cores per chip:    " << CORES_PER_CHIP << std::endl;
-  std::cout << "System cores:      " << chipsDim*chipsDim*CORES_PER_CHIP 
+  std::cout << "Cores per switch:  " << cfg.coresPerSwitch << std::endl;
+  std::cout << "Cores per chip:    " << cfg.coresPerChip << std::endl;
+  std::cout << "System cores:      " << chipsDim*chipsDim*cfg.coresPerChip 
     << " (" << chipsDim << " x " << chipsDim << " x " 
-    << CORES_PER_CHIP << ")" << std::endl;
+    << cfg.coresPerChip << ")" << std::endl;
 #endif
 }
 
 int LatencyModel::calc2DArray(int s, int t) {
   
   // Source coordinates
-  int s_chip = s / CORES_PER_CHIP;
+  int s_chip = s / cfg.coresPerChip;
   int s_chipX = s_chip % chipsDim;
   int s_chipY = s_chip / chipsDim;
-  int s_switch = (s / CORES_PER_SWITCH) % SWITCHES_PER_CHIP;
+  int s_switch = (s / cfg.coresPerSwitch) % cfg.switchesPerChip;
   int s_switchX = s_switch % switchDim;
   int s_switchY = s_switch / switchDim;
   
   // Destination coordinates
-  int t_chip = t / CORES_PER_CHIP;
+  int t_chip = t / cfg.coresPerChip;
   int t_chipX = t_chip % chipsDim;
   int t_chipY = t_chip / chipsDim;
-  int t_switch = (t / CORES_PER_SWITCH) % SWITCHES_PER_CHIP;
+  int t_switch = (t / cfg.coresPerSwitch) % cfg.switchesPerChip;
   int t_switchX = t_switch % switchDim;
   int t_switchY = t_switch / switchDim;
 
@@ -71,7 +71,7 @@ int LatencyModel::calc2DArray(int s, int t) {
   case SP_MESH:
     // Inter-thread
     if (s == t) {
-      latency = LATENCY_THREAD;
+      latency = cfg.latencyThread;
       break;
     }
     // x-dimension
@@ -95,15 +95,15 @@ int LatencyModel::calc2DArray(int s, int t) {
       onChipY = abs(s_switchY - t_switchY);
     }
 
-    latency = LATENCY_SWITCH + 
-              LATENCY_ON_CHIP * (onChipX + onChipY) +
-              LATENCY_OFF_CHIP * (offChipX + offChipY);
+    latency = cfg.latencySwitch + 
+              cfg.latencyOnChip * (onChipX + onChipY) +
+              cfg.latencyOffChip * (offChipX + offChipY);
     break;
 
   case SP_TORUS:
     // Inter-thread
     if (s == t) {
-      latency = LATENCY_THREAD;
+      latency = cfg.latencyThread;
       break;
     }
     // x-dimension
@@ -143,9 +143,9 @@ int LatencyModel::calc2DArray(int s, int t) {
       onChipY = abs(s_switchY - t_switchY);
     }
     
-    latency = LATENCY_SWITCH +
-              LATENCY_ON_CHIP * (onChipX + onChipY) +
-              LATENCY_OFF_CHIP * (offChipX + offChipY);
+    latency = cfg.latencySwitch +
+              cfg.latencyOnChip * (onChipX + onChipY) +
+              cfg.latencyOffChip * (offChipX + offChipY);
     break;
   }
 
@@ -175,7 +175,7 @@ ticks_t LatencyModel::calc(int s, int t) {
   
   case SP_CLOS:
     // Roughly
-    latency = LATENCY_SWITCH + (2 * LATENCY_OFF_CHIP);
+    latency = cfg.latencySwitch + (2 * cfg.latencyOffChip);
     break;
 
   case SP_FATTREE:

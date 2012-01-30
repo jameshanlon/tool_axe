@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <memory>
+#include "Config.h"
 #include "ThreadState.h"
 #include "RunnableQueue.h"
 
@@ -15,6 +16,7 @@ class Node;
 class ChanEndpoint;
 
 class SystemState {
+  const Config &cfg;
   std::vector<Node*> nodes;
   RunnableQueue scheduler;
   /// The currently executing thread.
@@ -40,7 +42,7 @@ class SystemState {
 public:
   typedef std::vector<Node*>::iterator node_iterator;
   typedef std::vector<Node*>::const_iterator const_node_iterator;
-  SystemState() : currentThread(0) {
+  SystemState(const Config &cfg) : cfg(cfg), currentThread(0) {
     pendingEvent.set = false;
   }
   ~SystemState();

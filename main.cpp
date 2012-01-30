@@ -54,11 +54,12 @@ static void printUsage(const char *ProgName) {
   std::cout <<
 "General Options:\n"
 "  -help                       Display this information.\n"
-"  --loopback PORT1 PORT2      Connect PORT1 to PORT2.\n"
-"  --vcd FILE                  Write VCD trace to FILE.\n"
+"  --config FILE               Specify a configuration file.\n"
 "  -t                          Enable instruction tracing.\n"
 "  -s                          Simulate a sire program.\n"
 "  -d                          Dump execution statictics.\n"
+"  --loopback PORT1 PORT2      Connect PORT1 to PORT2.\n"
+"  --vcd FILE                  Write VCD trace to FILE.\n"
 "\n"
 "Peripherals:\n";
   for (PeripheralRegistry::iterator it = PeripheralRegistry::begin(),
@@ -851,10 +852,10 @@ static long readNumberAttribute(xmlNode *node, const char *name)
 }
 
 static inline std::auto_ptr<Core>
-createCoreFromConfig(xmlNode *config, LatencyModel *latencyModel)
+createCoreFromConfig(const Config &cfg, xmlNode *config, LatencyModel *latencyModel)
 {
-  uint32_t ram_size = RAM_SIZE;
-  uint32_t ram_base = RAM_BASE;
+  uint32_t ram_size = cfg.ramSize;
+  uint32_t ram_base = cfg.ramBase;
   xmlNode *memoryController = findChild(config, "MemoryController");
   xmlNode *ram = findChild(memoryController, "Ram");
   ram_base = readNumberAttribute(ram, "base");
@@ -868,7 +869,7 @@ createCoreFromConfig(xmlNode *config, LatencyModel *latencyModel)
 }
 
 static inline std::auto_ptr<Node>
-createNodeFromConfig(xmlNode *config,
+createNodeFromConfig(const Config &cfg, xmlNode *config,
                      std::map<long,Node*> &nodeNumberMap,
                      LatencyModel *latencyModel)
 {
@@ -885,14 +886,15 @@ createNodeFromConfig(xmlNode *config,
     if (child->type != XML_ELEMENT_NODE ||
         strcmp("Processor", (char*)child->name) != 0)
       continue;
-    node->addCore(createCoreFromConfig(child, latencyModel));
+    node->addCore(createCoreFromConfig(cfg, child, latencyModel));
   }
   node->setNodeID(nodeID);
   return node;
 }
 
 static inline std::auto_ptr<SystemState>
-createSystemFromConfig(const char *filename, const XESector *configSector)
+createSystemFromConfig(const Config &cfg, const char *filename, 
+    const XESector *configSector)
 {
   uint64_t length = configSector->getLength();
   const scoped_array<char> buf(new char[length + 1]);
@@ -928,15 +930,15 @@ createSystemFromConfig(const char *filename, const XESector *configSector)
   xmlNode *root = xmlDocGetRootElement(doc);
   xmlNode *system = findChild(root, "System");
   xmlNode *nodes = findChild(system, "Nodes");
-  LatencyModel *latencyModel = new LatencyModel(LatencyModel::NONE, 0);
-  std::auto_ptr<SystemState> systemState(new SystemState);
+  LatencyModel *latencyModel = new LatencyModel(cfg, LatencyModel::NONE, 0);
+  std::auto_ptr<SystemState> systemState(new SystemState(cfg));
   std::map<long,Node*> nodeNumberMap;
   for (xmlNode *child = nodes->children; child; child = child->next) {
     if (child->type != XML_ELEMENT_NODE ||
         strcmp("Node", (char*)child->name) != 0)
       continue;
     systemState->addNode(createNodeFromConfig(
-          child, nodeNumberMap, latencyModel));
+          cfg, child, nodeNumberMap, latencyModel));
   }
   xmlNode *jtag = findChild(system, "JtagChain");
   unsigned jtagIndex = 0;
@@ -983,7 +985,7 @@ addToCoreMap(std::map<std::pair<unsigned, unsigned>,Core*> &coreMap,
 }
 
 static inline std::auto_ptr<SystemState>
-readXE(const char *filename, SymbolInfo &SI,
+readXE(const Config &cfg, const char *filename, SymbolInfo &SI,
        std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints)
 {
   // Load the file into memory.
@@ -1000,7 +1002,7 @@ readXE(const char *filename, SymbolInfo &SI,
     std::exit(1);
   }
   std::auto_ptr<SystemState> system =
-    createSystemFromConfig(filename, configSector);
+    createSystemFromConfig(cfg, filename, configSector);
   std::map<std::pair<unsigned, unsigned>,Core*> coreMap;
   addToCoreMap(coreMap, *system);
   for (std::vector<const XESector *>::const_reverse_iterator
@@ -1033,10 +1035,11 @@ readXE(const char *filename, SymbolInfo &SI,
 }
 
 static inline std::auto_ptr<SystemState>
-createSESystem(const char *filename, int numCores)
+createSESystem(const Config &cfg, const char *filename, int numCores)
 {
-  LatencyModel *latencyModel = new LatencyModel(LatencyModel::SP_TORUS, numCores);
-  std::auto_ptr<SystemState> systemState(new SystemState);
+  LatencyModel *latencyModel = new LatencyModel(cfg, 
+      LatencyModel::SP_TORUS, numCores);
+  std::auto_ptr<SystemState> systemState(new SystemState(cfg));
   std::map<long, Node*> nodeNumberMap;
 
   // Create a single parent node
@@ -1047,9 +1050,7 @@ createSESystem(const char *filename, int numCores)
 
   // Create child cores
   for (int i=0; i<numCores; i++) {
-    uint32_t ram_size = RAM_SIZE;
-    uint32_t ram_base = RAM_BASE;
-    std::auto_ptr<Core> core(new Core(ram_size, ram_base, latencyModel));
+    std::auto_ptr<Core> core(new Core(cfg.ramSize, cfg.ramBase, latencyModel));
     core->setCoreNumber(i);
     node->addCore(core);
     //std::cout<<"Created core "<<i<<"\n";
@@ -1061,7 +1062,7 @@ createSESystem(const char *filename, int numCores)
 }
 
 static inline std::auto_ptr<SystemState>
-readSE(const char *filename, SymbolInfo &SI,
+readSE(const Config &cfg, const char *filename, SymbolInfo &SI,
        std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints)
 {
   //std::cout << "Reading " << filename << std::endl;
@@ -1075,7 +1076,8 @@ readSE(const char *filename, SymbolInfo &SI,
   se.read();
 
   // Create the system
-  std::auto_ptr<SystemState> system = createSESystem(filename, se.getNumCores());
+  std::auto_ptr<SystemState> system = createSESystem(cfg, 
+      filename, se.getNumCores());
   std::map<std::pair<unsigned, unsigned>, Core*> coreMap;
   addToCoreMap(coreMap, *system);
 
@@ -1121,19 +1123,20 @@ typedef std::vector<std::pair<PeripheralDescriptor*, Properties> >
   PeripheralDescriptorWithPropertiesVector;
 
 template <bool tracing> int
-loop(const char *filename, const LoopbackPorts &loopbackPorts,
-     const std::string &vcdFile,
-     const PeripheralDescriptorWithPropertiesVector &peripherals, 
-     bool sire, bool stats)
+loop(const Config &cfg, const char *filename, 
+    const LoopbackPorts &loopbackPorts,
+    const std::string &vcdFile,
+    const PeripheralDescriptorWithPropertiesVector &peripherals, 
+    bool sire, bool stats)
 {
   std::auto_ptr<SymbolInfo> SI(new SymbolInfo);
   std::set<Core*> coresWithImage;
   std::map<Core*,uint32_t> entryPoints;
   std::auto_ptr<SystemState> statePtr;
   if (sire)
-    statePtr = readSE(filename, *SI, coresWithImage, entryPoints);
+    statePtr = readSE(cfg, filename, *SI, coresWithImage, entryPoints);
   else
-    statePtr = readXE(filename, *SI, coresWithImage, entryPoints);
+    statePtr = readXE(cfg, filename, *SI, coresWithImage, entryPoints);
   SystemState &sys = *statePtr;
 
   if (!connectLoopbackPorts(sys, loopbackPorts)) {
@@ -1640,6 +1643,7 @@ main(int argc, char **argv) {
   bool tracing = false;
   bool sire = false;
   bool stats = false;
+  Config cfg;
   LoopbackPorts loopbackPorts;
   std::string vcdFile;
   std::string arg;
@@ -1652,6 +1656,14 @@ main(int argc, char **argv) {
       sire = true;
     } else if (arg == "-d") {
       stats = true;
+    } else if (arg == "--config") {
+      if (i + 1 > argc) {
+        printUsage(argv[0]);
+        return 1;
+      }
+      cfg.read(argv[i + 1]);
+      cfg.display();
+      i++;
     } else if (arg == "--vcd") {
       if (i + 1 > argc) {
         printUsage(argv[0]);
@@ -1692,8 +1704,8 @@ main(int argc, char **argv) {
   }
 #endif
   if (tracing) {
-    return loop<true>(file, loopbackPorts, vcdFile, peripherals, sire, stats);
+    return loop<true>(cfg, file, loopbackPorts, vcdFile, peripherals, sire, stats);
   } else {
-    return loop<false>(file, loopbackPorts, vcdFile, peripherals, sire, stats);
+    return loop<false>(cfg, file, loopbackPorts, vcdFile, peripherals, sire, stats);
   }
 }

@@ -128,7 +128,7 @@ void SystemState::dump(double elapsedTime) {
 
   // Simulation parameters
   std::cout << std::endl;
-  double ramSizeKB = (double) RAM_SIZE / 1000.0;
+  double ramSizeKB = (double) cfg.ramSize / 1000.0;
   double coreFreqMHz = (double) CYCLES_PER_SEC / 1000000.0;
   double aggregateRam = ((double) numCores * ramSizeKB) / 1000.0;
   std::cout << "Simulation parameters =========================="

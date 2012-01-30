@@ -13,10 +13,11 @@ public:
     SP_FATTREE,
     NONE
   };
-  LatencyModel(ModelType t, int n);
-  ticks_t calc(int s, int t); 
+  LatencyModel(const Config &cfg, ModelType type, int numCores);
+  ticks_t calc(int s, int t);
 
 private:
+  const Config &cfg;
   ModelType type;
   int numCores;
   std::map<std::pair<int, int>, ticks_t> cache;

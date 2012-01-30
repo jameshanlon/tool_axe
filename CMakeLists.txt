@@ -75,6 +75,7 @@ add_executable(axe
   Trace.cpp
   BitManip.h
   Config.h
+  Config.cpp
   ScopedArray.h
   ring_buffer.h
   Instruction.h

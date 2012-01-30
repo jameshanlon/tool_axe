@@ -7,6 +7,7 @@
 #define _Config_h_
 
 #include <stdint.h>
+#include <string>
 #include <boost/detail/endian.hpp>
 
 /// Number of threads per core.
@@ -38,24 +39,24 @@
  NUM_16BIT_PORTS + NUM_32BIT_PORTS)
 
 /// Log base 2 of memory size in bytes.
-#define RAM_SIZE_LOG 16 // 0.07MB
+#define DEFAULT_RAM_SIZE_LOG 16 // 0.07MB
 //#define RAM_SIZE_LOG 20 // 1.05MB
 //#define RAM_SIZE_LOG 22 // 4.19MB
 
 /// Default size of ram in bytes
-#define RAM_SIZE (1 << RAM_SIZE_LOG)
+//#define RAM_SIZE (1 << ramSizeLog)
 /// Default ram base
 //#define RAM_BASE RAM_SIZE
-#define RAM_BASE (1 << 16)
+//#define RAM_BASE (1 << 16)
 
 /// Size of the (input) buffer in a chanend.
 #define CHANEND_BUFFER_SIZE 8
 
-/// Number of processor cycles per 100MHz timer tick
-#define CYCLES_PER_TICK 4
-
 // Assume 10ns cycle (400Mhz clock)
 #define CYCLES_PER_SEC (400*1000000)
+
+/// Number of processor cycles per 100MHz timer tick
+#define CYCLES_PER_TICK 4
 
 // Time to execute an instruction
 #define INSTRUCTION_CYCLES CYCLES_PER_TICK
@@ -65,19 +66,22 @@
 // between threads.
 #define DIV_CYCLES 32
 
-/// Number of cycles a memory access takes to complete
-#define MEMORY_ACCESS_CYCLES 1 
+// Number of cycles a memory access takes to complete
+// This appears in the main loop in scope of a reference to the Config object
+#define MEMORY_ACCESS_CYCLES cfg.latencyMemory
 
 // Latency model parameters (cycles)
-#define LATENCY_SWITCH    3  // Latency in and out of the switch
-#define LATENCY_THREAD    1  // Between threads
-#define LATENCY_ON_CHIP   5  // 1 hop
-#define LATENCY_OFF_CHIP  10 // 1 hop
+//#define LATENCY_SWITCH    3  // Latency in and out of the switch
+//#define LATENCY_THREAD    1  // Between threads
+//#define LATENCY_ON_CHIP   5  // 1 hop
+//#define LATENCY_OFF_CHIP  10 // 1 hop
 
 // 2D mesh and torus topology parameters
-#define SWITCHES_PER_CHIP 1 // Must be a positive power of 2
-#define CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
-#define CORES_PER_CHIP    (SWITCHES_PER_CHIP*CORES_PER_SWITCH)
+#define DEFAULT_SWITCHES_PER_CHIP 1 // Must be a positive power of 2
+#define DEFAULT_CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
+//#define SWITCHES_PER_CHIP 1 // Must be a positive power of 2
+//#define CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
+//#define CORES_PER_CHIP    (SWITCHES_PER_CHIP*CORES_PER_SWITCH)
 
 typedef uint64_t ticks_t;
 
@@ -99,5 +103,34 @@ typedef uint64_t ticks_t;
 #else
 #error "Unknown endianness"
 #endif
+
+class Config {
+  public:
+    uint32_t ramSizeLog;
+    uint32_t ramSize;
+    uint32_t ramBase;
+    unsigned switchesPerChip;
+    unsigned coresPerSwitch;
+    unsigned coresPerChip;
+    unsigned latencyMemory;
+    unsigned latencySwitch;
+    unsigned latencyThread;
+    unsigned latencyOnChip;
+    unsigned latencyOffChip;
+    
+    Config() {
+      // Set defaults
+      ramSizeLog      = DEFAULT_RAM_SIZE_LOG;
+      switchesPerChip = DEFAULT_SWITCHES_PER_CHIP;
+      coresPerSwitch  = DEFAULT_CORES_PER_SWITCH;
+      latencyMemory   = 0;
+      latencySwitch   = 0;
+      latencyThread   = 0;
+      latencyOnChip   = 0;
+      latencyOffChip  = 0;
+    }
+    void read(const std::string &file);
+    void display();
+};
 
 #endif // _Config_h_
