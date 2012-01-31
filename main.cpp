@@ -930,7 +930,7 @@ createSystemFromConfig(const Config &cfg, const char *filename,
   xmlNode *root = xmlDocGetRootElement(doc);
   xmlNode *system = findChild(root, "System");
   xmlNode *nodes = findChild(system, "Nodes");
-  LatencyModel *latencyModel = new LatencyModel(cfg, LatencyModel::NONE, 0);
+  LatencyModel *latencyModel = new LatencyModel(cfg, 0);
   std::auto_ptr<SystemState> systemState(new SystemState(cfg));
   std::map<long,Node*> nodeNumberMap;
   for (xmlNode *child = nodes->children; child; child = child->next) {
@@ -1037,8 +1037,7 @@ readXE(const Config &cfg, const char *filename, SymbolInfo &SI,
 static inline std::auto_ptr<SystemState>
 createSESystem(const Config &cfg, const char *filename, int numCores)
 {
-  LatencyModel *latencyModel = new LatencyModel(cfg, 
-      LatencyModel::SP_TORUS, numCores);
+  LatencyModel *latencyModel = new LatencyModel(cfg, numCores);
   std::auto_ptr<SystemState> systemState(new SystemState(cfg));
   std::map<long, Node*> nodeNumberMap;
 

@@ -3,7 +3,6 @@
 #include <cmath>
 #include <algorithm>
 #include "LatencyModel.h"
-#include "Config.h"
 
 /*
  * n := number of processors
@@ -17,8 +16,8 @@
 #define MAX_CACHED 100000
 //#define DEBUG 
 
-LatencyModel::LatencyModel(const Config &cfg, ModelType type, int numCores) : 
-    cfg(cfg), type(type), numCores(numCores) {
+LatencyModel::LatencyModel(const Config &cfg, int numCores) : 
+    cfg(cfg), numCores(numCores) {
   switchDim = (int) sqrt(cfg.switchesPerChip);
   chipsDim = (numCores/cfg.coresPerSwitch) / switchDim;
 #ifdef DEBUG
@@ -65,10 +64,10 @@ int LatencyModel::calc2DArray(int s, int t) {
   int onChipX, onChipY, offChipX, offChipY;
   int latency;
 
-  switch(type) {
+  switch(cfg.latencyModelType) {
   default: assert(0);
   
-  case SP_MESH:
+  case Config::SP_2DMESH:
     // Inter-thread
     if (s == t) {
       latency = cfg.latencyThread;
@@ -100,7 +99,7 @@ int LatencyModel::calc2DArray(int s, int t) {
               cfg.latencyOffChip * (offChipX + offChipY);
     break;
 
-  case SP_TORUS:
+  case Config::SP_2DTORUS:
     // Inter-thread
     if (s == t) {
       latency = cfg.latencyThread;
@@ -161,24 +160,29 @@ ticks_t LatencyModel::calc(int s, int t) {
 
   int latency;
 
-  switch(type) {
+  switch(cfg.latencyModelType) {
   default: assert(0);
   
-  case NONE:
+  case Config::NONE:
     latency = 0;
     break;
 
-  case SP_MESH:
-  case SP_TORUS:
+  case Config::SP_2DMESH:
+  case Config::SP_2DTORUS:
     latency = calc2DArray(s, t);
     break;
   
-  case SP_CLOS:
+  case Config::SP_HYPERCUBE:
+    // TODO
+    latency = 0;
+    break;
+  
+  case Config::SP_CLOS:
     // Roughly
     latency = cfg.latencySwitch + (2 * cfg.latencyOffChip);
     break;
 
-  case SP_FATTREE:
+  case Config::SP_FATTREE:
     // TODO
     latency = 0;
     break;

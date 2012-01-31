@@ -106,6 +106,14 @@ typedef uint64_t ticks_t;
 
 class Config {
   public:
+    enum tLatencyModel {
+      SP_2DMESH,
+      SP_2DTORUS,
+      SP_HYPERCUBE,
+      SP_CLOS,
+      SP_FATTREE,
+      NONE
+    };
     uint32_t ramSizeLog;
     uint32_t ramSize;
     uint32_t ramBase;
@@ -117,17 +125,22 @@ class Config {
     unsigned latencyThread;
     unsigned latencyOnChip;
     unsigned latencyOffChip;
+    tLatencyModel latencyModelType;
     
     Config() {
       // Set defaults
-      ramSizeLog      = DEFAULT_RAM_SIZE_LOG;
-      switchesPerChip = DEFAULT_SWITCHES_PER_CHIP;
-      coresPerSwitch  = DEFAULT_CORES_PER_SWITCH;
-      latencyMemory   = 0;
-      latencySwitch   = 0;
-      latencyThread   = 0;
-      latencyOnChip   = 0;
-      latencyOffChip  = 0;
+      ramSizeLog       = DEFAULT_RAM_SIZE_LOG;
+      ramSize          = 1 << ramSizeLog;
+      ramBase          = 1 << DEFAULT_RAM_SIZE_LOG;
+      switchesPerChip  = DEFAULT_SWITCHES_PER_CHIP;
+      coresPerSwitch   = DEFAULT_CORES_PER_SWITCH;
+      coresPerChip     = switchesPerChip * coresPerSwitch;
+      latencyMemory    = 0;
+      latencySwitch    = 0;
+      latencyThread    = 0;
+      latencyOnChip    = 0;
+      latencyOffChip   = 0;
+      latencyModelType = NONE;
     }
     int read(const std::string &file);
     void display();

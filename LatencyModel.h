@@ -6,19 +6,11 @@
 
 class LatencyModel {
 public:
-  enum ModelType {
-    SP_MESH,
-    SP_TORUS,
-    SP_CLOS,
-    SP_FATTREE,
-    NONE
-  };
-  LatencyModel(const Config &cfg, ModelType type, int numCores);
+  LatencyModel(const Config &cfg, int numCores);
   ticks_t calc(int s, int t);
 
 private:
   const Config &cfg;
-  ModelType type;
   int numCores;
   std::map<std::pair<int, int>, ticks_t> cache;
   // Dimensions for mesh and tori

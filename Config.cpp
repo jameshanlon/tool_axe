@@ -5,7 +5,7 @@
 #include "Config.h"
 
 #define BUF_LEN 1000 
-#define READ_PARAM(key, var) \
+#define READ_VAL_PARAM(key, var) \
 do { \
   if (!strncmp(key, line, strlen(key))) { \
     sscanf(line, key " %[(:-~)*]%u", str, &(var)); \
@@ -22,6 +22,7 @@ do { \
 int Config::read(const std::string &file) {
   FILE *fp = fopen(file.c_str(), "r");
   char line[BUF_LEN];
+  char junk[BUF_LEN];
   char str[BUF_LEN];
 
   if(!fp) {
@@ -31,19 +32,41 @@ int Config::read(const std::string &file) {
 
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
-    READ_PARAM("ram-size-log",      ramSizeLog);
-    READ_PARAM("switches-per-chip", switchesPerChip);
-    READ_PARAM("cores-per-switch",  coresPerSwitch);
-    READ_PARAM("latency-memory",    latencyMemory);
-    READ_PARAM("latency-switch",    latencySwitch);
-    READ_PARAM("latency-thread",    latencyThread);
-    READ_PARAM("latency-on-chip",   latencyOnChip);
-    READ_PARAM("latency-off-chip",  latencyOffChip);
+    READ_VAL_PARAM("ram-size-log",      ramSizeLog);
+    READ_VAL_PARAM("switches-per-chip", switchesPerChip);
+    READ_VAL_PARAM("cores-per-switch",  coresPerSwitch);
+    READ_VAL_PARAM("latency-memory",    latencyMemory);
+    READ_VAL_PARAM("latency-switch",    latencySwitch);
+    READ_VAL_PARAM("latency-thread",    latencyThread);
+    READ_VAL_PARAM("latency-on-chip",   latencyOnChip);
+    READ_VAL_PARAM("latency-off-chip",  latencyOffChip);
+    if (!strncmp("latency-model", line, strlen("latency-model"))) {
+      sscanf(line, "latency-model%[^\"]\"%[(:-~)*]\"", junk, str);
+      if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
+        latencyModelType = SP_2DMESH;
+      }
+      if (!strncmp("sp-2dtorus", str, strlen("sp-2dtorus"))) {
+        latencyModelType = SP_2DTORUS;
+      }
+      if (!strncmp("sp-hypercube", str, strlen("sp-hypercube"))) {
+        latencyModelType = SP_HYPERCUBE;
+      }
+      if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
+        latencyModelType = SP_CLOS;
+      }
+      if (!strncmp("sp-fattree", str, strlen("sp-fattree"))) {
+        latencyModelType = SP_FATTREE;
+      }
+      else {
+        std::cout << "ERROR: Invalid latency model.\n";
+        return 0;
+      }
+      continue;
+    }
   }
   
-  // Calculate consequential parameters
+  // (Re)calculate consequential parameters
   ramSize = 1 << ramSizeLog;
-  ramBase = 1 << DEFAULT_RAM_SIZE_LOG;
   coresPerChip = switchesPerChip * coresPerSwitch;
 
   return 1;
@@ -62,5 +85,6 @@ void Config::display() {
   PRINT_PARAM("Latency thread",    latencyThread);
   PRINT_PARAM("Latency on-chip",   latencyOnChip);
   PRINT_PARAM("Latency off-chip",  latencyOffChip);
+  PRINT_PARAM("Latency model",     latencyModelType);
 }
 
