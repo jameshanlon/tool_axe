@@ -33,32 +33,33 @@ int Config::read(const std::string &file) {
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
     READ_VAL_PARAM("ram-size-log",      ramSizeLog);
-    READ_VAL_PARAM("switches-per-chip", switchesPerChip);
     READ_VAL_PARAM("cores-per-switch",  coresPerSwitch);
+    READ_VAL_PARAM("switch-exp-base",   switchExpBase);
+    READ_VAL_PARAM("switches-per-chip", switchesPerChip);
     READ_VAL_PARAM("latency-memory",    latencyMemory);
     READ_VAL_PARAM("latency-switch",    latencySwitch);
     READ_VAL_PARAM("latency-thread",    latencyThread);
     READ_VAL_PARAM("latency-on-chip",   latencyOnChip);
     READ_VAL_PARAM("latency-off-chip",  latencyOffChip);
     if (!strncmp("latency-model", line, strlen("latency-model"))) {
-      sscanf(line, "latency-model%[^\"]\"%[(:-~)*]\"", junk, str);
+      sscanf(line, "latency-model%[^\"]\"%[^\"]\"", junk, str);
       if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
         latencyModelType = SP_2DMESH;
       }
-      if (!strncmp("sp-2dtorus", str, strlen("sp-2dtorus"))) {
+      else if (!strncmp("sp-2dtorus", str, strlen("sp-2dtorus"))) {
         latencyModelType = SP_2DTORUS;
       }
-      if (!strncmp("sp-hypercube", str, strlen("sp-hypercube"))) {
+      else if (!strncmp("sp-hypercube", str, strlen("sp-hypercube"))) {
         latencyModelType = SP_HYPERCUBE;
       }
-      if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
+      else if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
         latencyModelType = SP_CLOS;
       }
-      if (!strncmp("sp-fattree", str, strlen("sp-fattree"))) {
+      else if (!strncmp("sp-fattree", str, strlen("sp-fattree"))) {
         latencyModelType = SP_FATTREE;
       }
       else {
-        std::cout << "ERROR: Invalid latency model.\n";
+        std::cout << "Error: invalid latency model.\n";
         return 0;
       }
       continue;
@@ -78,8 +79,8 @@ void Config::display() {
   std::cout << std::left << "Configuration " << std::endl;
   std::cout.fill(' ');
   PRINT_PARAM("RAM size (KB)",     ramSize);
+  PRINT_PARAM("Switch exp base",   switchExpBase);
   PRINT_PARAM("Switches per chip", switchesPerChip);
-  PRINT_PARAM("Cores per switch",  coresPerSwitch);
   PRINT_PARAM("Latency memory",    latencyMemory);
   PRINT_PARAM("Latency switch",    latencySwitch);
   PRINT_PARAM("Latency thread",    latencyThread);

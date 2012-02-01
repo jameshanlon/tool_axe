@@ -11,11 +11,10 @@
 #include <boost/detail/endian.hpp>
 
 /// Number of threads per core.
-#define NUM_THREADS 16
-
+#define NUM_THREADS 20
 /// Number of synchronisers per core.
 // TODO Check number.
-#define NUM_SYNCS 16
+#define NUM_SYNCS 20
 
 /// Number of locks per core.
 #define NUM_LOCKS 4
@@ -77,8 +76,8 @@
 //#define LATENCY_OFF_CHIP  10 // 1 hop
 
 // 2D mesh and torus topology parameters
+#define DEFAULT_SWITCH_EXP_BASE   2
 #define DEFAULT_SWITCHES_PER_CHIP 1 // Must be a positive power of 2
-#define DEFAULT_CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
 //#define SWITCHES_PER_CHIP 1 // Must be a positive power of 2
 //#define CORES_PER_SWITCH  4 // Must be a power of 2 greater than 1
 //#define CORES_PER_CHIP    (SWITCHES_PER_CHIP*CORES_PER_SWITCH)
@@ -106,7 +105,7 @@ typedef uint64_t ticks_t;
 
 class Config {
   public:
-    enum tLatencyModel {
+    enum LatencyModelType {
       SP_2DMESH,
       SP_2DTORUS,
       SP_HYPERCUBE,
@@ -118,6 +117,7 @@ class Config {
     uint32_t ramSize;
     uint32_t ramBase;
     unsigned switchesPerChip;
+    unsigned switchExpBase;
     unsigned coresPerSwitch;
     unsigned coresPerChip;
     unsigned latencyMemory;
@@ -125,22 +125,22 @@ class Config {
     unsigned latencyThread;
     unsigned latencyOnChip;
     unsigned latencyOffChip;
-    tLatencyModel latencyModelType;
+    LatencyModelType latencyModelType;
     
     Config() {
       // Set defaults
       ramSizeLog       = DEFAULT_RAM_SIZE_LOG;
       ramSize          = 1 << ramSizeLog;
       ramBase          = 1 << DEFAULT_RAM_SIZE_LOG;
-      switchesPerChip  = DEFAULT_SWITCHES_PER_CHIP;
-      coresPerSwitch   = DEFAULT_CORES_PER_SWITCH;
-      coresPerChip     = switchesPerChip * coresPerSwitch;
+      latencyModelType = NONE;
+      /*switchesPerChip  = DEFAULT_SWITCHES_PER_CHIP;
+      switchExpBase    = DEFAULT_SWITCH_EXP_BASE;
+      coresPerChip     = switchesPerChip * switchRadix;
       latencyMemory    = 0;
       latencySwitch    = 0;
       latencyThread    = 0;
       latencyOnChip    = 0;
-      latencyOffChip   = 0;
-      latencyModelType = NONE;
+      latencyOffChip   = 0;*/
     }
     int read(const std::string &file);
     void display();

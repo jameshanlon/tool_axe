@@ -4,35 +4,37 @@
 #include <algorithm>
 #include "LatencyModel.h"
 
-/*
- * n := number of processors
- * m := number of processors per chip
- * Assume:
- *  - Square array of n processors.
- *  - sqrt(n) is divided by integer value sqrt(m).
- *  - It is always preferential to traverse intra-chip rather than inter-chip.
- */
-
 #define MAX_CACHED 100000
 //#define DEBUG 
 
 LatencyModel::LatencyModel(const Config &cfg, int numCores) : 
     cfg(cfg), numCores(numCores) {
-  switchDim = (int) sqrt(cfg.switchesPerChip);
-  chipsDim = (numCores/cfg.coresPerSwitch) / switchDim;
 #ifdef DEBUG
-  std::cout << "Num cores:         " << numCores << std::endl;
-  std::cout << "Switches per chip: " << cfg.switchesPerChip
-    << " (" << switchDim << " x " << switchDim << ")" << std::endl;
-  std::cout << "Cores per switch:  " << cfg.coresPerSwitch << std::endl;
-  std::cout << "Cores per chip:    " << cfg.coresPerChip << std::endl;
-  std::cout << "System cores:      " << chipsDim*chipsDim*cfg.coresPerChip 
-    << " (" << chipsDim << " x " << chipsDim << " x " 
-    << cfg.coresPerChip << ")" << std::endl;
+  std::cout << "Latency model parameters" << std::endl;
+  std::cout << "Num cores: " << numCores << std::endl;
+#endif 
+  switch(cfg.latencyModelType) {
+  default: break;
+  case Config::SP_2DMESH:
+  case Config::SP_2DTORUS:
+    switchDim = (int) sqrt(cfg.switchesPerChip);
+    chipsDim = (numCores/cfg.coresPerSwitch) / switchDim;
+#ifdef DEBUG
+    std::cout << "Switches per chip: " << cfg.switchesPerChip
+      << " (" << switchDim << " x " << switchDim << ")" << std::endl;
+    std::cout << "System cores:      " << chipsDim*chipsDim*cfg.coresPerChip 
+      << " (" << chipsDim << " x " << chipsDim << " x " 
+      << cfg.coresPerChip << ")" << std::endl;
 #endif
+    break;
+  }
 }
 
 int LatencyModel::calc2DArray(int s, int t) {
+  // Assume:
+  //  - Square array of n processors.
+  //  - sqrt(n) is divided by integer value sqrt(m).
+  //  - It is always preferential to traverse intra-chip rather than inter-chip.
   
   // Source coordinates
   int s_chip = s / cfg.coresPerChip;
@@ -50,7 +52,7 @@ int LatencyModel::calc2DArray(int s, int t) {
   int t_switchX = t_switch % switchDim;
   int t_switchY = t_switch / switchDim;
 
-#ifdef DEBUG
+/*#ifdef DEBUG
   std::cout << "\ns (" << s << ") : "
     << "chip " << s_chip << " (" << s_chipX << ", " << s_chipY << "), "
     << "switch " << s_switch << " (" << s_switchX << ", " << s_switchY << ")" 
@@ -59,7 +61,7 @@ int LatencyModel::calc2DArray(int s, int t) {
     << "chip " << t_chip << " (" << t_chipX << ", " << t_chipY << "), "
     << "switch " << t_switch << " (" << t_switchX << ", " << t_switchY << ")" 
     << std::endl;
-#endif
+#endif*/
   
   int onChipX, onChipY, offChipX, offChipY;
   int latency;
@@ -151,6 +153,73 @@ int LatencyModel::calc2DArray(int s, int t) {
   return latency;
 }
 
+int LatencyModel::calcHypercube(int s, int t) {
+  if (s == t) {
+    return cfg.latencyThread;
+  }
+  else {
+    int switchS = int(s / cfg.coresPerSwitch);
+    int switchT = int(t / cfg.coresPerSwitch);
+    // Count mismatching bits
+    int numHops = 0;
+    for(size_t i=0; i<CHAR_BIT*sizeof(unsigned); i++) {
+      if (((switchS ^ switchT) & (1 << i)) > 0)
+          numHops++;
+    }
+    int maxHopsOnChip = (int)(log(cfg.switchesPerChip) / log(2));
+    if (maxHopsOnChip < numHops) {
+      int hopsOffChip = numHops - maxHopsOnChip;
+      int latency = cfg.latencySwitch
+        + (cfg.latencyOnChip * maxHopsOnChip)
+        + (cfg.latencyOffChip * hopsOffChip);
+      assert(latency >= 0);
+      return latency;
+    }
+    else {
+      int latency = cfg.latencySwitch + (cfg.latencyOnChip * numHops);
+      assert(latency >= 0);
+      return latency;
+    }
+  }
+}
+
+int LatencyModel::calcClos(int s, int t) {
+  if (s == t) {
+    return cfg.latencyThread;
+  }
+  else {
+    // Roughly
+    int latency = cfg.latencySwitch + (2 * cfg.latencyOffChip);
+    return latency;
+  }
+}
+
+int LatencyModel::calcTree(int s, int t) {
+  if (s == t) {
+    return cfg.latencyThread;
+  }
+  else {
+    int degree = cfg.coresPerSwitch-1;
+    int switchS = int(s / cfg.coresPerSwitch);
+    int switchT = int(t / cfg.coresPerSwitch);
+    int numHops = 2 * (((int)(log(abs(switchS-switchT)) / log(degree))) + 1);
+    int maxHopsOnChip = 2 * ((int)(log(cfg.switchesPerChip) / log(degree)));
+    if (maxHopsOnChip < numHops) {
+      int hopsOffChip = numHops - maxHopsOnChip;
+      int latency = cfg.latencySwitch
+        + (cfg.latencyOnChip * maxHopsOnChip)
+        + (cfg.latencyOffChip * hopsOffChip);
+      assert(latency >= 0);
+      return latency;
+    }
+    else {
+      int latency = cfg.latencySwitch + (cfg.latencyOnChip * numHops);
+      assert(latency >= 0);
+      return latency;
+    }
+  }
+}
+
 ticks_t LatencyModel::calc(int s, int t) {
  
   // Check the cache first
@@ -173,18 +242,15 @@ ticks_t LatencyModel::calc(int s, int t) {
     break;
   
   case Config::SP_HYPERCUBE:
-    // TODO
-    latency = 0;
+    latency = calcHypercube(s, t);
     break;
   
   case Config::SP_CLOS:
-    // Roughly
-    latency = cfg.latencySwitch + (2 * cfg.latencyOffChip);
+    latency = calcClos(s, t);
     break;
 
   case Config::SP_FATTREE:
-    // TODO
-    latency = 0;
+    latency = calcTree(s, t);
     break;
   }
 
