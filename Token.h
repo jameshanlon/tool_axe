@@ -9,12 +9,22 @@
 #include <stdint.h>
 
 enum ControlTokenValue {
-  CT_END = 1,
-  CT_PAUSE = 2,
-  CT_ACK = 3,
-  CT_NACK = 4,
+  CT_END    = 0x01,
+  CT_PAUSE  = 0x02,
+  CT_ACK    = 0x03,
+  CT_NACK   = 0x04,
   CT_WRITEC = 0xc0,
-  CT_READC = 0xc1
+  CT_READC  = 0xc1,
+  CT_READN  = 0x10,
+  CT_READ1  = 0x11,
+  CT_READ2  = 0x12,
+  CT_READ4  = 0x13,
+  CT_READ8  = 0x14,
+  CT_WRITEN = 0x15,
+  CT_WRITE1 = 0x16,
+  CT_WRITE2 = 0x17,
+  CT_WRITE4 = 0x18,
+  CT_WRITE8 = 0x19
 };
 
 class Token {

@@ -30,9 +30,21 @@ private:
   bool inPacket;
   /// Should be current packet be junked?
   bool junkPacket;
-  LatencyModel *latencyModel;
 
-  void debug();
+  /// Memory access packets
+  enum memAccess_t {
+    WRITE4,
+    READ4
+  };
+  bool        memAccessPacket;
+  uint8_t     memAccessStep;
+  memAccess_t memAccessType;
+  uint32_t    memAddress;
+  uint32_t    memValue;
+  void illegalMemAccessPacket();
+
+  /// Latency model
+  LatencyModel *latencyModel;
   ticks_t getLatency(Chanend *dest);
 
   /// Update the channel end after the data is placed in the buffer.
@@ -76,6 +88,8 @@ private:
   uint8_t poptoken(ticks_t time);
 
   void setPausedIn(ThreadState &t, bool wordInput);
+  
+  void debug();
 
 public:
   Chanend() : EventableResource(RES_TYPE_CHANEND) {}
@@ -88,6 +102,7 @@ public:
     pausedIn = 0;
     inPacket = false;
     junkPacket = false;
+    memAccessPacket = false;
     eventableSetInUseOn(t);
     setJunkIncoming(false);
     return true;
