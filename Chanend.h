@@ -32,16 +32,14 @@ private:
   bool junkPacket;
 
   /// Memory access packets
-  enum memAccess_t {
-    WRITE4,
-    READ4
-  };
+  enum memAccess_t { WRITE4, READ4 };
   bool        memAccessPacket;
   uint8_t     memAccessStep;
   memAccess_t memAccessType;
   uint32_t    memAddress;
   uint32_t    memValue;
   void illegalMemAccessPacket();
+  void illegalMemAddress();
 
   /// Latency model
   LatencyModel *latencyModel;

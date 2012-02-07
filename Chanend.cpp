@@ -27,6 +27,10 @@ void Chanend::illegalMemAccessPacket() {
   std::cout << "Illegal memory access packet." << std::endl;
 }
 
+void Chanend::illegalMemAddress() {
+  std::cout << "Illegal memory address." << std::endl;
+}
+
 bool Chanend::canAcceptToken()
 {
   return !buf.full();
@@ -67,9 +71,12 @@ void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
     case READ4:
       switch(memAccessStep) {
       case 0:
+        setData(getOwner(), BYTES_TO_WORD(values), time);
+        //std::cout<<"Got CRI "<<std::hex<<BYTES_TO_WORD(values)<<std::endl;
+        break;
+      case 1:
         memAddress = BYTES_TO_WORD(values);
-        memAccessStep++;
-        std::cout<<"Got address"<<std::endl;
+        //std::cout<<"Got address "<<std::hex<<memAddress<<std::endl;
         break;
       default:
         illegalMemAccessPacket();
@@ -79,14 +86,16 @@ void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
     case WRITE4:
       switch(memAccessStep) {
       case 0:
-        memAddress = BYTES_TO_WORD(values);
-        memAccessStep++;
-        std::cout<<"Got address"<<std::endl;
+        setData(getOwner(), BYTES_TO_WORD(values), time);
+        //std::cout<<"Got CRI "<<std::hex<<BYTES_TO_WORD(values)<<std::endl;
         break;
       case 1:
+        memAddress = BYTES_TO_WORD(values);
+        //std::cout<<"Got address "<<std::hex<<memAddress<<std::endl;
+        break;
+      case 2:
         memValue = BYTES_TO_WORD(values);
-        memAccessStep++;
-        std::cout<<"Got value"<<std::endl;
+        //std::cout<<"Got value "<<memValue<<std::endl;
         break;
       default:
         illegalMemAccessPacket();
@@ -94,8 +103,9 @@ void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
       }
       break;
     default:
-      assert(0);
+      assert(0 && "Invalid memory access type.");
     }
+    memAccessStep++;
   }
 #ifdef DEBUG
   debug(); std::cout << "Got " << num
@@ -120,13 +130,13 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
       memAccessPacket = true;
       memAccessType = READ4;
       memAccessStep = 0;
-      std::cout<<"Memory access: READ4"<<std::endl;
+      //std::cout<<"Memory access: READ4"<<std::endl;
       break;
     case CT_WRITE4:
       memAccessPacket = true;
       memAccessType = WRITE4;
       memAccessStep = 0;
-      std::cout<<"Memory access: WRITE4"<<std::endl;
+      //std::cout<<"Memory access: WRITE4"<<std::endl;
       break;
     default:
       buf.push_back(Token(value, true));
@@ -135,6 +145,8 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
     }
   }
   else {
+    uint32_t phyAddr;
+    Core &core = getOwner().getParent();
     switch (value) {
     case CT_END:
       // Respond with (value, END) for READ or (END) for WRITE
@@ -142,26 +154,39 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
       // that thread.
       switch(memAccessType) {
       case READ4:
-        if(memAccessStep != 1) {
-          illegalMemAccessPacket();
-          return;
-        }
-        out(getOwner(), getOwner().getParent().loadWord(memAddress), time);
-        outct(getOwner(), CT_END, time+CYCLES_PER_TICK);
-        std::cout<<"End READ4"<<std::endl;
-        break;
-      case WRITE4:
         if(memAccessStep != 2) {
           illegalMemAccessPacket();
           return;
         }
-        getOwner().getParent().storeWord(memValue, memAddress);
+        phyAddr = core.physicalAddress(memAddress);
+        if (!(!((phyAddr) & 3) && core.isValidAddress(phyAddr))) {
+          illegalMemAddress();
+          return;
+        }
+        out(getOwner(), core.loadWord(phyAddr), time);
+        outct(getOwner(), CT_END, time+CYCLES_PER_TICK);
+        //debug(); std::cout<<"Reading from address "
+        //  <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
+        //std::cout<<"End READ4"<<std::endl;
+        break;
+      case WRITE4:
+        if(memAccessStep != 3) {
+          illegalMemAccessPacket();
+          return;
+        }
+        phyAddr = core.physicalAddress(memAddress);
+        if (!(!((phyAddr) & 3) && core.isValidAddress(phyAddr))) {
+          illegalMemAddress();
+          return;
+        }
+        core.storeWord(memValue, phyAddr);
         outct(getOwner(), CT_END, time);
-        std::cout<<"End WRITE4"<<std::endl;
+        //debug(); std::cout<<"Writing to address "
+        //  <<std::hex<<memAddress<<std::dec<<" = "<<memValue<std::endl;
+        //std::cout<<"End WRITE4"<<std::endl;
         break;
       }
       memAccessPacket = false;
-      memAccessStep = 0;
       release(time);
       break;
     default:
