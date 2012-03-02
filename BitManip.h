@@ -27,14 +27,14 @@ inline int16_t bswap16(int16_t value)
 
 inline uint32_t bswap32(uint32_t x)
 {
-#if __GNUC__ > 3
-  return __builtin_bswap32(x);
-#else
+//#if __GNUC__ > 3
+//  return __builtin_bswap32(x);
+//#else
   return (x >> 24)
     | ((x >> 8) & 0x0000ff00)
     | ((x << 8) & 0x00ff0000)
     | (x << 24);
-#endif
+//#endif
 }
 
 inline uint32_t bitReverse(uint32_t x)

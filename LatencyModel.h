@@ -13,7 +13,9 @@ private:
   const Config &cfg;
   int numCores;
   std::map<std::pair<int, int>, ticks_t> cache;
- 
+  
+  int latency(int hopsOnChip, int hopsOffChip);
+
   // Dimensions for mesh and tori
   int switchDim; // Number of switches in each dimension of a chip
   int chipsDim;  // Number of chips in each dimension of the system

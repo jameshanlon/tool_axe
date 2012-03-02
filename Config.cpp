@@ -32,15 +32,15 @@ int Config::read(const std::string &file) {
 
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
-    READ_VAL_PARAM("ram-size-log",      ramSizeLog);
-    READ_VAL_PARAM("cores-per-switch",  coresPerSwitch);
-    READ_VAL_PARAM("switch-exp-base",   switchExpBase);
-    READ_VAL_PARAM("switches-per-chip", switchesPerChip);
-    READ_VAL_PARAM("latency-memory",    latencyMemory);
-    READ_VAL_PARAM("latency-switch",    latencySwitch);
-    READ_VAL_PARAM("latency-thread",    latencyThread);
-    READ_VAL_PARAM("latency-on-chip",   latencyOnChip);
-    READ_VAL_PARAM("latency-off-chip",  latencyOffChip);
+    READ_VAL_PARAM("ram-size-log",         ramSizeLog);
+    READ_VAL_PARAM("cores-per-switch",     coresPerSwitch);
+    READ_VAL_PARAM("switches-per-chip",    switchesPerChip);
+    READ_VAL_PARAM("latency-memory",       latencyMemory);
+    READ_VAL_PARAM("latency-switch",       latencySwitch);
+    READ_VAL_PARAM("latency-thread",       latencyThread);
+    READ_VAL_PARAM("latency-on-chip-hop",  latencyOnChipHop);
+    READ_VAL_PARAM("latency-off-chip",     latencyOffChip);
+    READ_VAL_PARAM("latency-off-chip-hop", latencyOffChipHop);
     if (!strncmp("latency-model", line, strlen("latency-model"))) {
       sscanf(line, "latency-model%[^\"]\"%[^\"]\"", junk, str);
       if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
@@ -78,14 +78,14 @@ void Config::display() {
   std::cout.width(26);
   std::cout << std::left << "Configuration " << std::endl;
   std::cout.fill(' ');
-  PRINT_PARAM("RAM size (KB)",     ramSize);
-  PRINT_PARAM("Switch exp base",   switchExpBase);
-  PRINT_PARAM("Switches per chip", switchesPerChip);
-  PRINT_PARAM("Latency memory",    latencyMemory);
-  PRINT_PARAM("Latency switch",    latencySwitch);
-  PRINT_PARAM("Latency thread",    latencyThread);
-  PRINT_PARAM("Latency on-chip",   latencyOnChip);
-  PRINT_PARAM("Latency off-chip",  latencyOffChip);
-  PRINT_PARAM("Latency model",     latencyModelType);
+  PRINT_PARAM("RAM size (KB)",        ramSize);
+  PRINT_PARAM("Switches per chip",    switchesPerChip);
+  PRINT_PARAM("Latency memory",       latencyMemory);
+  PRINT_PARAM("Latency switch",       latencySwitch);
+  PRINT_PARAM("Latency thread",       latencyThread);
+  PRINT_PARAM("Latency on-chip hop",  latencyOnChipHop);
+  PRINT_PARAM("Latency off-chip",     latencyOffChip);
+  PRINT_PARAM("Latency off-chip hop", latencyOffChipHop);
+  PRINT_PARAM("Latency model",        latencyModelType);
 }
 

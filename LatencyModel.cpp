@@ -30,6 +30,15 @@ LatencyModel::LatencyModel(const Config &cfg, int numCores) :
   }
 }
 
+int LatencyModel::latency(int hopsOnChip, int hopsOffChip) {
+  if (hopsOnChip + hopsOffChip == 0)
+    return cfg.latencyThread;
+  return cfg.latencySwitch
+    + (cfg.latencyOnChipHop * hopsOnChip)
+    + (hopsOffChip > 0 ? cfg.latencyOffChip : 0)
+    + (cfg.latencyOffChipHop * hopsOffChip);
+}
+
 int LatencyModel::calc2DArray(int s, int t) {
   // Assume:
   //  - Square array of n processors.
@@ -63,8 +72,10 @@ int LatencyModel::calc2DArray(int s, int t) {
     << std::endl;
 #endif*/
   
-  int onChipX, onChipY, offChipX, offChipY;
-  int latency;
+  int onChipX = 0;
+  int onChipY = 0;
+  int offChipX = 0;
+  int offChipY = 0;
 
   switch(cfg.latencyModelType) {
   default: assert(0);
@@ -72,7 +83,6 @@ int LatencyModel::calc2DArray(int s, int t) {
   case Config::SP_2DMESH:
     // Inter-thread
     if (s == t) {
-      latency = cfg.latencyThread;
       break;
     }
     // x-dimension
@@ -82,7 +92,6 @@ int LatencyModel::calc2DArray(int s, int t) {
       onChipX += s_chipX > t_chipX ? switchDim-t_switchX-1 : t_switchX;
     }
     else {
-      offChipX = 0;
       onChipX = abs(s_switchX - t_switchX);
     }
     // y-dimension
@@ -92,19 +101,13 @@ int LatencyModel::calc2DArray(int s, int t) {
       onChipY += s_chipY > t_chipY ? switchDim-t_switchY-1 : t_switchY;
     }
     else {
-      offChipY = 0;
       onChipY = abs(s_switchY - t_switchY);
     }
-
-    latency = cfg.latencySwitch + 
-              cfg.latencyOnChip * (onChipX + onChipY) +
-              cfg.latencyOffChip * (offChipX + offChipY);
     break;
 
   case Config::SP_2DTORUS:
     // Inter-thread
     if (s == t) {
-      latency = cfg.latencyThread;
       break;
     }
     // x-dimension
@@ -122,7 +125,6 @@ int LatencyModel::calc2DArray(int s, int t) {
       onChipX += dirX == -1 ? switchDim-t_switchX-1 : t_switchX;
     }
     else {
-      offChipX = 0;
       onChipX = abs(s_switchX - t_switchX);
     }
     // y-dimension
@@ -140,22 +142,17 @@ int LatencyModel::calc2DArray(int s, int t) {
       onChipY += dirY == -1 ? switchDim-t_switchY-1 : t_switchY;
     }
     else {
-      offChipY = 0;
       onChipY = abs(s_switchY - t_switchY);
     }
-    
-    latency = cfg.latencySwitch +
-              cfg.latencyOnChip * (onChipX + onChipY) +
-              cfg.latencyOffChip * (offChipX + offChipY);
     break;
   }
 
-  return latency;
+  return latency(onChipX+onChipY, offChipX+offChipY);
 }
 
 int LatencyModel::calcHypercube(int s, int t) {
   if (s == t) {
-    return cfg.latencyThread;
+    return latency(0, 0);
   }
   else {
     int switchS = int(s / cfg.coresPerSwitch);
@@ -169,34 +166,34 @@ int LatencyModel::calcHypercube(int s, int t) {
     int maxHopsOnChip = (int)(log(cfg.switchesPerChip) / log(2));
     if (maxHopsOnChip < numHops) {
       int hopsOffChip = numHops - maxHopsOnChip;
-      int latency = cfg.latencySwitch
-        + (cfg.latencyOnChip * maxHopsOnChip)
-        + (cfg.latencyOffChip * hopsOffChip);
-      assert(latency >= 0);
-      return latency;
+      return latency(maxHopsOnChip, hopsOffChip);
     }
     else {
-      int latency = cfg.latencySwitch + (cfg.latencyOnChip * numHops);
-      assert(latency >= 0);
-      return latency;
+      return latency(numHops, 0);
     }
   }
 }
 
 int LatencyModel::calcClos(int s, int t) {
   if (s == t) {
-    return cfg.latencyThread;
+    return latency(0, 0);
   }
   else {
-    // Roughly
-    int latency = cfg.latencySwitch + (2 * cfg.latencyOffChip);
-    return latency;
+    switch(numCores) {
+    default: assert(0);
+    case 16:
+    case 64:
+    case 256: 
+      return latency(0, 2);
+    case 1024:
+      return latency(2, 2);
+    }
   }
 }
 
 int LatencyModel::calcTree(int s, int t) {
   if (s == t) {
-    return cfg.latencyThread;
+    return latency(0, 0);
   }
   else {
     int degree = cfg.coresPerSwitch-1;
@@ -206,16 +203,10 @@ int LatencyModel::calcTree(int s, int t) {
     int maxHopsOnChip = 2 * ((int)(log(cfg.switchesPerChip) / log(degree)));
     if (maxHopsOnChip < numHops) {
       int hopsOffChip = numHops - maxHopsOnChip;
-      int latency = cfg.latencySwitch
-        + (cfg.latencyOnChip * maxHopsOnChip)
-        + (cfg.latencyOffChip * hopsOffChip);
-      assert(latency >= 0);
-      return latency;
+      return latency(maxHopsOnChip, hopsOffChip);
     }
     else {
-      int latency = cfg.latencySwitch + (cfg.latencyOnChip * numHops);
-      assert(latency >= 0);
-      return latency;
+      return latency(numHops, 0);
     }
   }
 }
