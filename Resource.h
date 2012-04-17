@@ -302,6 +302,10 @@ protected:
 
   void scheduleUpdate(ticks_t time);
 public:
+  bool hasOwner()
+  {
+    return owner != 0;
+  }
   ThreadState &getOwner()
   {
     return *owner;

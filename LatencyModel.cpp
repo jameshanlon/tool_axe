@@ -159,7 +159,7 @@ int LatencyModel::calcHypercube(int s, int t) {
     int switchT = int(t / cfg.coresPerSwitch);
     // Count mismatching bits
     int numHops = 0;
-    for(size_t i=0; i<CHAR_BIT*sizeof(unsigned); i++) {
+    for(size_t i=0; i<8*sizeof(unsigned); i++) {
       if (((switchS ^ switchT) & (1 << i)) > 0)
           numHops++;
     }

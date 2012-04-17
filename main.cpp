@@ -892,6 +892,26 @@ createNodeFromConfig(const Config &cfg, xmlNode *config,
   return node;
 }
 
+static inline int
+countNumCoresFromConfig(const xmlNode *nodes)
+{
+  int count = 0;
+  // Nodes
+  for (xmlNode *node = nodes->children; node; node = node->next) {
+    if (node->type != XML_ELEMENT_NODE ||
+        strcmp("Node", (char*)node->name) != 0)
+      continue;
+    // Cores
+    for (xmlNode *core = node->children; core; core = core->next) {
+      if (core->type != XML_ELEMENT_NODE ||
+          strcmp("Processor", (char*)core->name) != 0)
+        continue;
+      count++;
+    }
+  }
+  return count;
+}
+
 static inline std::auto_ptr<SystemState>
 createSystemFromConfig(const Config &cfg, const char *filename, 
     const XESector *configSector)
@@ -930,7 +950,8 @@ createSystemFromConfig(const Config &cfg, const char *filename,
   xmlNode *root = xmlDocGetRootElement(doc);
   xmlNode *system = findChild(root, "System");
   xmlNode *nodes = findChild(system, "Nodes");
-  LatencyModel *latencyModel = new LatencyModel(cfg, 0);
+  LatencyModel *latencyModel = new LatencyModel(cfg,
+      countNumCoresFromConfig(nodes));
   std::auto_ptr<SystemState> systemState(new SystemState(cfg));
   std::map<long,Node*> nodeNumberMap;
   for (xmlNode *child = nodes->children; child; child = child->next) {
