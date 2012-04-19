@@ -33,7 +33,7 @@ int Config::read(const std::string &file) {
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
     READ_VAL_PARAM("ram-size-log",         ramSizeLog);
-    READ_VAL_PARAM("cores-per-switch",     coresPerSwitch);
+    READ_VAL_PARAM("tiles-per-switch",     tilesPerSwitch);
     READ_VAL_PARAM("switches-per-chip",    switchesPerChip);
     READ_VAL_PARAM("latency-memory",       latencyMemory);
     READ_VAL_PARAM("latency-switch",       latencySwitch);
@@ -68,7 +68,7 @@ int Config::read(const std::string &file) {
   
   // (Re)calculate consequential parameters
   ramSize = 1 << ramSizeLog;
-  coresPerChip = switchesPerChip * coresPerSwitch;
+  tilesPerChip = switchesPerChip * tilesPerSwitch;
 
   return 1;
 }
@@ -80,6 +80,8 @@ void Config::display() {
   std::cout.fill(' ');
   PRINT_PARAM("RAM size (KB)",        ramSize);
   PRINT_PARAM("Switches per chip",    switchesPerChip);
+  PRINT_PARAM("Tiles per switch",     tilesPerSwitch);
+  PRINT_PARAM("Tiles per chip",       tilesPerChip);
   PRINT_PARAM("Latency memory",       latencyMemory);
   PRINT_PARAM("Latency switch",       latencySwitch);
   PRINT_PARAM("Latency thread",       latencyThread);

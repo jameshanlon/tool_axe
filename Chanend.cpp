@@ -251,11 +251,14 @@ void Chanend::setLatencyModel(LatencyModel *p) {
 }
 
 ticks_t Chanend::getLatency(Chanend *dest) {
-  unsigned sourceID = getOwner().getParent().getCoreNumber();
   // Might be a switch
   if (dest->hasOwner()) {
-    unsigned destID = dest->getOwner().getParent().getCoreNumber();
-    return latencyModel->calc(sourceID, destID);
+    uint32_t sourceCore = getOwner().getParent().getCoreNumber();
+    uint32_t sourceNode = getOwner().getParent().getParent()->getNodeID();
+    uint32_t destCore = dest->getOwner().getParent().getCoreNumber();
+    uint32_t destNode = dest->getOwner().getParent().getParent()->getNodeID();
+    //std::cout<<sourceNode<<" - "<<destNode<<std::endl;
+    return latencyModel->calc(sourceCore, sourceNode, destCore, destNode);
   }
   // Should really return the latency to the switch based on the node it
   // belongs to, but this isn't straight forward as a Chanend in a switch

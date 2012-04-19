@@ -893,7 +893,7 @@ createNodeFromConfig(const Config &cfg, xmlNode *config,
 }
 
 static inline int
-countNumCoresFromConfig(const xmlNode *nodes)
+countCoresFromConfig(const xmlNode *nodes)
 {
   int count = 0;
   // Nodes
@@ -951,7 +951,7 @@ createSystemFromConfig(const Config &cfg, const char *filename,
   xmlNode *system = findChild(root, "System");
   xmlNode *nodes = findChild(system, "Nodes");
   LatencyModel *latencyModel = new LatencyModel(cfg,
-      countNumCoresFromConfig(nodes));
+      countCoresFromConfig(nodes));
   std::auto_ptr<SystemState> systemState(new SystemState(cfg));
   std::map<long,Node*> nodeNumberMap;
   for (xmlNode *child = nodes->children; child; child = child->next) {

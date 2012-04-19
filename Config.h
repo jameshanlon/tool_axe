@@ -117,8 +117,8 @@ class Config {
     uint32_t ramSize;
     uint32_t ramBase;
     unsigned switchesPerChip;
-    unsigned coresPerSwitch;
-    unsigned coresPerChip;
+    unsigned tilesPerSwitch;
+    unsigned tilesPerChip;
     unsigned latencyMemory;
     unsigned latencySwitch;
     unsigned latencyThread;

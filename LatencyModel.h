@@ -7,7 +7,8 @@
 class LatencyModel {
 public:
   LatencyModel(const Config &cfg, int numCores);
-  ticks_t calc(int s, int t);
+  ticks_t calc(uint32_t sCore, uint32_t sNode, 
+      uint32_t tCore, uint32_t tNode);
 
 private:
   const Config &cfg;
