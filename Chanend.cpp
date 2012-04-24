@@ -250,7 +250,7 @@ void Chanend::setLatencyModel(LatencyModel *p) {
   latencyModel = p;
 }
 
-ticks_t Chanend::getLatency(Chanend *dest) {
+ticks_t Chanend::getLatency(Chanend *dest, int numTokens, bool routeOpen) {
   // Might be a switch
   if (dest->hasOwner()) {
     uint32_t sourceCore = getOwner().getParent().getCoreNumber();
@@ -258,7 +258,8 @@ ticks_t Chanend::getLatency(Chanend *dest) {
     uint32_t destCore = dest->getOwner().getParent().getCoreNumber();
     uint32_t destNode = dest->getOwner().getParent().getParent()->getNodeID();
     //std::cout<<sourceNode<<" - "<<destNode<<std::endl;
-    return latencyModel->calc(sourceCore, sourceNode, destCore, destNode);
+    return latencyModel->calc(sourceCore, sourceNode, destCore, destNode,
+        numTokens, routeOpen);
   }
   // Should really return the latency to the switch based on the node it
   // belongs to, but this isn't straight forward as a Chanend in a switch
@@ -268,7 +269,8 @@ ticks_t Chanend::getLatency(Chanend *dest) {
 
 Resource::ResOpResult Chanend::
 outt(ThreadState &thread, uint8_t value, ticks_t time)
-{
+{ 
+  ticks_t l = getLatency((Chanend *) dest, 1, inPacket);
   updateOwner(thread);
   if (!openRoute()) {
     pausedOut = &thread;
@@ -282,7 +284,6 @@ outt(ThreadState &thread, uint8_t value, ticks_t time)
   }
   //dest->receiveDataToken(time, value);
   TokenDelay *td = new DataTokenDelay(dest, value);
-  ticks_t l = getLatency((Chanend *) dest);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+l);
 #ifdef DEBUG
   debug(); std::cout << "Sent a data token at "
@@ -294,6 +295,7 @@ outt(ThreadState &thread, uint8_t value, ticks_t time)
 Resource::ResOpResult Chanend::
 out(ThreadState &thread, uint32_t value, ticks_t time)
 {
+  ticks_t l = getLatency((Chanend *) dest, 4, inPacket);
   updateOwner(thread);
   if (!openRoute()) {
     pausedOut = &thread;
@@ -314,7 +316,6 @@ out(ThreadState &thread, uint32_t value, ticks_t time)
   };
   //dest->receiveDataTokens(time, tokens, 4);
   TokenDelay *td = new DataTokensDelay(dest, tokens, 4);
-  ticks_t l = getLatency((Chanend *) dest);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+l);
 #ifdef DEBUG
   debug(); std::cout << "Sent 4 data tokens at "
@@ -326,6 +327,7 @@ out(ThreadState &thread, uint32_t value, ticks_t time)
 Resource::ResOpResult Chanend::
 outct(ThreadState &thread, uint8_t value, ticks_t time)
 {
+  ticks_t l = getLatency((Chanend *) dest, 1, inPacket);
   updateOwner(thread);
   if (!openRoute()) {
     pausedOut = &thread;
@@ -344,7 +346,6 @@ outct(ThreadState &thread, uint8_t value, ticks_t time)
   }
   //dest->receiveCtrlToken(time, value);
   TokenDelay *td = new CtrlTokenDelay(dest, value);
-  ticks_t l = getLatency((Chanend *) dest);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+l);
 #ifdef DEBUG
   debug(); std::cout << "Sent a control token at "

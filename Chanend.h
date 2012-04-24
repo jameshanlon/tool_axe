@@ -43,7 +43,7 @@ private:
 
   /// Latency model
   LatencyModel *latencyModel;
-  ticks_t getLatency(Chanend *dest);
+  ticks_t getLatency(Chanend *dest, int numTokens, bool routeOpen);
 
   /// Update the channel end after the data is placed in the buffer.
   void update(ticks_t time);

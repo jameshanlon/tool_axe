@@ -1683,7 +1683,7 @@ main(int argc, char **argv) {
       }
       if(!cfg.read(argv[i + 1])) 
         return 1;
-      //cfg.display();
+      cfg.display();
       i++;
     } else if (arg == "--vcd") {
       if (i + 1 > argc) {

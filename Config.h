@@ -120,11 +120,12 @@ class Config {
     unsigned tilesPerSwitch;
     unsigned tilesPerChip;
     unsigned latencyMemory;
-    unsigned latencySwitch;
     unsigned latencyThread;
-    unsigned latencyOnChipHop;
+    unsigned latencyToken;
+    unsigned latencyHop;
     unsigned latencyOffChip;
-    unsigned latencyOffChipHop;
+    unsigned latencyHopOpen;
+    unsigned latencyOffChipOpen;
     LatencyModelType latencyModelType;
     
     Config() {

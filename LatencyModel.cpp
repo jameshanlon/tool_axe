@@ -30,17 +30,27 @@ LatencyModel::LatencyModel(const Config &cfg, int numCores) :
   }
 }
 
-int LatencyModel::latency(int hopsOnChip, int hopsOffChip) {
+int LatencyModel::latency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket) {
   //std::cout<<hopsOnChip<<" on chip, "<<hopsOffChip<<" off"<<std::endl;
   if (hopsOnChip + hopsOffChip == 0)
     return cfg.latencyThread;
-  return cfg.latencySwitch
-    + (cfg.latencyOnChipHop * hopsOnChip)
-    + (hopsOffChip > 0 ? cfg.latencyOffChip : 0)
-    + (cfg.latencyOffChipHop * hopsOffChip);
+  int latency = 0;
+  //latency += cfg.latencyToken * numTokens;
+  latency += cfg.latencyToken * 4;
+  // Overhead of opening a route through switches
+  //if (!inPacket) {
+    latency += hopsOffChip > 0 ? cfg.latencyOffChipOpen : 0;
+    latency += cfg.latencyHopOpen * hopsOnChip;
+    latency += cfg.latencyHopOpen * hopsOffChip;
+  //}
+  // Fixed overhead
+  latency += hopsOffChip > 0 ? cfg.latencyOffChip : 0;
+  latency += cfg.latencyHop * hopsOnChip;
+  latency += cfg.latencyHop * hopsOffChip;
+  return latency;
 }
 
-int LatencyModel::calc2DArray(int s, int t) {
+int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
   // Assume:
   //  - Square array of n processors.
   //  - sqrt(n) is divided by integer value sqrt(m).
@@ -148,12 +158,12 @@ int LatencyModel::calc2DArray(int s, int t) {
     break;
   }
 
-  return latency(onChipX+onChipY, offChipX+offChipY);
+  return latency(onChipX+onChipY, offChipX+offChipY, numTokens, inPacket);
 }
 
-int LatencyModel::calcHypercube(int s, int t) {
+int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
   if (s == t) {
-    return latency(0, 0);
+    return latency(0, 0, numTokens, inPacket);
   }
   else {
     int switchS = int(s / cfg.tilesPerSwitch);
@@ -167,25 +177,39 @@ int LatencyModel::calcHypercube(int s, int t) {
     int maxHopsOnChip = (int)(log(cfg.switchesPerChip) / log(2));
     if (maxHopsOnChip < numHops) {
       int hopsOffChip = numHops - maxHopsOnChip;
-      return latency(maxHopsOnChip, hopsOffChip);
-      /*switch (hopsOffChip) {
-        case 1: return 24*4;
-        case 2: return 32*4;
-        case 3: return 40*4;
-        case 4: return 47*4;
-        default: return 1000;
+      return latency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
+      /*if (!inPacket) {
+        switch (hopsOffChip) {
+          case 1: return 31;
+          case 2: return 41;
+          case 3: return 50;
+          case 4: return 59;
+          default: assert(0);
+        }
+      } else {
+        switch (hopsOffChip) {
+          case 1: return 19;
+          case 2: return 26;
+          case 3: return 32;
+          case 4: return 38;
+          default: assert(0);
+        }
       }*/
     }
     else {
-      return latency(numHops, 0);
-      //return 10*4;
+      return latency(numHops, 0, numTokens, inPacket);
+      /*if (!inPacket) {
+        return 10;
+      /} else {
+        return 8;
+      }*/
     }
   }
 }
 
-int LatencyModel::calcClos(int s, int t) {
+int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
   if (s == t) {
-    return latency(0, 0);
+    return latency(0, 0, numTokens, inPacket);
   }
   else {
     switch(numCores) {
@@ -193,16 +217,16 @@ int LatencyModel::calcClos(int s, int t) {
     case 16:
     case 64:
     case 256: 
-      return latency(0, 2);
+      return latency(0, 2, numTokens, inPacket);
     case 1024:
-      return latency(2, 2);
+      return latency(2, 2, numTokens, inPacket);
     }
   }
 }
 
-int LatencyModel::calcTree(int s, int t) {
+int LatencyModel::calcTree(int s, int t, int numTokens, bool inPacket) {
   if (s == t) {
-    return latency(0, 0);
+    return latency(0, 0, numTokens, inPacket);
   }
   else {
     int degree = cfg.tilesPerSwitch-1;
@@ -212,24 +236,27 @@ int LatencyModel::calcTree(int s, int t) {
     int maxHopsOnChip = 2 * ((int)(log(cfg.switchesPerChip) / log(degree)));
     if (maxHopsOnChip < numHops) {
       int hopsOffChip = numHops - maxHopsOnChip;
-      return latency(maxHopsOnChip, hopsOffChip);
+      return latency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
     }
     else {
-      return latency(numHops, 0);
+      return latency(numHops, 0, numTokens, inPacket);
     }
   }
 }
 
 ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode, 
-    uint32_t tCore, uint32_t tNode) {
+    uint32_t tCore, uint32_t tNode, int numTokens, bool inPacket) {
  
   uint32_t s = ((sNode>>4) * cfg.tilesPerChip) + sCore;
   uint32_t t = ((tNode>>4) * cfg.tilesPerChip) + tCore;
 
   // Check the cache first
-  std::pair<uint32_t, uint32_t> key = std::make_pair(std::min(s, t), std::max(s, t));
-  if (cache.count(key) > 0)
+  // TODO: numTokens to key
+  std::pair<std::pair<uint32_t, uint32_t>, bool> key = std::make_pair(
+      std::make_pair(std::min(s, t), std::max(s, t)), inPacket);
+  /*if (cache.count(key) > 0) {
     return cache[key];
+  }*/
 
   int latency;
 
@@ -242,19 +269,19 @@ ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode,
 
   case Config::SP_2DMESH:
   case Config::SP_2DTORUS:
-    latency = calc2DArray(s, t);
+    latency = calc2DArray(s, t, numTokens, inPacket);
     break;
   
   case Config::SP_HYPERCUBE:
-    latency = calcHypercube(s, t);
+    latency = calcHypercube(s, t, numTokens, inPacket);
     break;
   
   case Config::SP_CLOS:
-    latency = calcClos(s, t);
+    latency = calcClos(s, t, numTokens, inPacket);
     break;
 
   case Config::SP_FATTREE:
-    latency = calcTree(s, t);
+    latency = calcTree(s, t, numTokens, inPacket);
     break;
   }
 
@@ -262,10 +289,10 @@ ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode,
   std::cout << s << " -> " << t << " : " << latency << std::endl;
 #endif
 
-  cache.insert(std::make_pair(key, latency));
+  /*cache.insert(std::make_pair(key, latency));
   if (cache.size() > MAX_CACHED) {
     assert(0 && "Latency cache too large.");
-  }
-  return latency;
+  }*/
+  return latency * CYCLES_PER_TICK;
 }
 

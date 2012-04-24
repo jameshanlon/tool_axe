@@ -6,12 +6,10 @@
 
 #define BUF_LEN 1000 
 #define READ_VAL_PARAM(key, var) \
-do { \
-  if (!strncmp(key, line, strlen(key))) { \
-    sscanf(line, key " %[(:-~)*]%u", str, &(var)); \
-    continue; \
-  } \
-} while(0)
+if (!strncmp(key, line, strlen(key))) { \
+  sscanf(line, key " %[(:-~)*]%u", str, &(var)); \
+  continue; \
+}
 #define PRINT_PARAM(key, val) \
 do { \
   std::cout.width(22); \
@@ -29,18 +27,19 @@ int Config::read(const std::string &file) {
     std::cout << "No config file.\n";
     return 0;
   }
-
+  
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
-    READ_VAL_PARAM("ram-size-log",         ramSizeLog);
-    READ_VAL_PARAM("tiles-per-switch",     tilesPerSwitch);
-    READ_VAL_PARAM("switches-per-chip",    switchesPerChip);
-    READ_VAL_PARAM("latency-memory",       latencyMemory);
-    READ_VAL_PARAM("latency-switch",       latencySwitch);
-    READ_VAL_PARAM("latency-thread",       latencyThread);
-    READ_VAL_PARAM("latency-on-chip-hop",  latencyOnChipHop);
-    READ_VAL_PARAM("latency-off-chip",     latencyOffChip);
-    READ_VAL_PARAM("latency-off-chip-hop", latencyOffChipHop);
+    READ_VAL_PARAM("ram-size-log",          ramSizeLog);
+    READ_VAL_PARAM("tiles-per-switch",      tilesPerSwitch);
+    READ_VAL_PARAM("switches-per-chip",     switchesPerChip);
+    READ_VAL_PARAM("latency-memory",        latencyMemory);
+    READ_VAL_PARAM("latency-thread",        latencyThread);
+    READ_VAL_PARAM("latency-token",         latencyToken);
+    READ_VAL_PARAM("latency-hop",           latencyHop);
+    READ_VAL_PARAM("latency-off-chip",      latencyOffChip);
+    READ_VAL_PARAM("latency-open-hop",      latencyHopOpen);
+    READ_VAL_PARAM("latency-open-off-chip", latencyOffChipOpen);
     if (!strncmp("latency-model", line, strlen("latency-model"))) {
       sscanf(line, "latency-model%[^\"]\"%[^\"]\"", junk, str);
       if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
@@ -64,8 +63,12 @@ int Config::read(const std::string &file) {
       }
       continue;
     }
+    std::cerr << "Invalid configuration parameter: " << line << std::endl;
+    return 0;
   }
   
+  latencyMemory *= CYCLES_PER_TICK;
+
   // (Re)calculate consequential parameters
   ramSize = 1 << ramSizeLog;
   tilesPerChip = switchesPerChip * tilesPerSwitch;
@@ -78,16 +81,17 @@ void Config::display() {
   std::cout.width(26);
   std::cout << std::left << "Configuration " << std::endl;
   std::cout.fill(' ');
-  PRINT_PARAM("RAM size (KB)",        ramSize);
-  PRINT_PARAM("Switches per chip",    switchesPerChip);
-  PRINT_PARAM("Tiles per switch",     tilesPerSwitch);
-  PRINT_PARAM("Tiles per chip",       tilesPerChip);
-  PRINT_PARAM("Latency memory",       latencyMemory);
-  PRINT_PARAM("Latency switch",       latencySwitch);
-  PRINT_PARAM("Latency thread",       latencyThread);
-  PRINT_PARAM("Latency on-chip hop",  latencyOnChipHop);
-  PRINT_PARAM("Latency off-chip",     latencyOffChip);
-  PRINT_PARAM("Latency off-chip hop", latencyOffChipHop);
-  PRINT_PARAM("Latency model",        latencyModelType);
+  PRINT_PARAM("RAM size (KB)",         ramSize);
+  PRINT_PARAM("Switches per chip",     switchesPerChip);
+  PRINT_PARAM("Tiles per switch",      tilesPerSwitch);
+  PRINT_PARAM("Tiles per chip",        tilesPerChip);
+  PRINT_PARAM("Latency memory",        latencyMemory/CYCLES_PER_TICK);
+  PRINT_PARAM("Latency thread",        latencyThread);
+  PRINT_PARAM("Latency token",         latencyToken);
+  PRINT_PARAM("Latency hop",           latencyHop);
+  PRINT_PARAM("Latency off-chip",      latencyOffChip);
+  PRINT_PARAM("Latency hop open",      latencyHopOpen);
+  PRINT_PARAM("Latency off-chip open", latencyOffChipOpen);
+  PRINT_PARAM("Latency model",         latencyModelType);
 }
 
