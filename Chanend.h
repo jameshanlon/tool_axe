@@ -43,7 +43,8 @@ private:
 
   /// Latency model
   LatencyModel *latencyModel;
-  ticks_t getLatency(Chanend *dest, int numTokens, bool routeOpen);
+  ticks_t lastTime, lastLatency;
+  ticks_t getLatency(Chanend *dest, int numTokens, bool routeOpen, ticks_t time);
 
   /// Update the channel end after the data is placed in the buffer.
   void update(ticks_t time);
@@ -90,7 +91,7 @@ private:
   void debug();
 
 public:
-  Chanend() : EventableResource(RES_TYPE_CHANEND) {}
+  Chanend() : EventableResource(RES_TYPE_CHANEND), lastTime(0), lastLatency(0) {}
 
   bool alloc(ThreadState &t)
   {

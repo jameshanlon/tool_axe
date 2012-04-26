@@ -250,7 +250,8 @@ void Chanend::setLatencyModel(LatencyModel *p) {
   latencyModel = p;
 }
 
-ticks_t Chanend::getLatency(Chanend *dest, int numTokens, bool routeOpen) {
+ticks_t Chanend::getLatency(Chanend *dest, int numTokens, bool inPacket,
+    ticks_t time) {
   // Might be a switch
   if (dest->hasOwner()) {
     uint32_t sourceCore = getOwner().getParent().getCoreNumber();
@@ -258,8 +259,15 @@ ticks_t Chanend::getLatency(Chanend *dest, int numTokens, bool routeOpen) {
     uint32_t destCore = dest->getOwner().getParent().getCoreNumber();
     uint32_t destNode = dest->getOwner().getParent().getParent()->getNodeID();
     //std::cout<<sourceNode<<" - "<<destNode<<std::endl;
-    return latencyModel->calc(sourceCore, sourceNode, destCore, destNode,
-        numTokens, routeOpen);
+    ticks_t latency = latencyModel->calc(sourceCore, sourceNode, destCore, destNode,
+        numTokens, inPacket);
+    // Don't let tokens over take one another
+    if (time+latency < lastTime+lastLatency) {
+      latency = lastLatency + (time-lastTime);
+    }
+    lastTime = time;
+    lastLatency = latency;
+    return latency;
   }
   // Should really return the latency to the switch based on the node it
   // belongs to, but this isn't straight forward as a Chanend in a switch
@@ -270,7 +278,7 @@ ticks_t Chanend::getLatency(Chanend *dest, int numTokens, bool routeOpen) {
 Resource::ResOpResult Chanend::
 outt(ThreadState &thread, uint8_t value, ticks_t time)
 { 
-  ticks_t l = getLatency((Chanend *) dest, 1, inPacket);
+  ticks_t l = getLatency((Chanend *) dest, 1, inPacket, time);
   updateOwner(thread);
   if (!openRoute()) {
     pausedOut = &thread;
@@ -295,7 +303,7 @@ outt(ThreadState &thread, uint8_t value, ticks_t time)
 Resource::ResOpResult Chanend::
 out(ThreadState &thread, uint32_t value, ticks_t time)
 {
-  ticks_t l = getLatency((Chanend *) dest, 4, inPacket);
+  ticks_t l = getLatency((Chanend *) dest, 4, inPacket, time);
   updateOwner(thread);
   if (!openRoute()) {
     pausedOut = &thread;
@@ -327,7 +335,7 @@ out(ThreadState &thread, uint32_t value, ticks_t time)
 Resource::ResOpResult Chanend::
 outct(ThreadState &thread, uint8_t value, ticks_t time)
 {
-  ticks_t l = getLatency((Chanend *) dest, 1, inPacket);
+  ticks_t l = getLatency((Chanend *) dest, 1, inPacket, time);
   updateOwner(thread);
   if (!openRoute()) {
     pausedOut = &thread;

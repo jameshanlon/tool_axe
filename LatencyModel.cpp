@@ -35,14 +35,13 @@ int LatencyModel::latency(int hopsOnChip, int hopsOffChip, int numTokens, bool i
   if (hopsOnChip + hopsOffChip == 0)
     return cfg.latencyThread;
   int latency = 0;
-  //latency += cfg.latencyToken * numTokens;
-  latency += cfg.latencyToken * 4;
+  latency += cfg.latencyToken * numTokens;
   // Overhead of opening a route through switches
-  //if (!inPacket) {
+  if (!inPacket) {
     latency += hopsOffChip > 0 ? cfg.latencyOffChipOpen : 0;
     latency += cfg.latencyHopOpen * hopsOnChip;
     latency += cfg.latencyHopOpen * hopsOffChip;
-  //}
+  }
   // Fixed overhead
   latency += hopsOffChip > 0 ? cfg.latencyOffChip : 0;
   latency += cfg.latencyHop * hopsOnChip;
@@ -251,10 +250,9 @@ ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode,
   uint32_t t = ((tNode>>4) * cfg.tilesPerChip) + tCore;
 
   // Check the cache first
-  // TODO: numTokens to key
-  std::pair<std::pair<uint32_t, uint32_t>, bool> key = std::make_pair(
+  /*std::pair<std::pair<uint32_t, uint32_t>, bool> key = std::make_pair(
       std::make_pair(std::min(s, t), std::max(s, t)), inPacket);
-  /*if (cache.count(key) > 0) {
+  if (cache.count(key) > 0) {
     return cache[key];
   }*/
 
