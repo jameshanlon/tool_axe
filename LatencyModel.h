@@ -15,11 +15,14 @@ private:
   int numCores;
   std::map<std::pair<std::pair<uint32_t, uint32_t>, bool>, ticks_t> cache;
   
-  int latency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket);
+  int threadLatency();
+  int switchLatency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket);
 
   // Dimensions for mesh and tori
-  int switchDim; // Number of switches in each dimension of a chip
-  int chipsDim;  // Number of chips in each dimension of the system
+  int switchDimX; // Number of switches in each dimension of a chip
+  int switchDimY; // Number of switches in each dimension of a chip
+  int chipsDimX;  // Number of chips in each dimension of the system
+  int chipsDimY;  // Number of chips in each dimension of the system
   int calc2DArray(int s, int t, int numTokens, bool inPacket);
   
   int calcHypercube(int s, int t, int numTokens, bool inPacket);

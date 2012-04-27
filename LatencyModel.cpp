@@ -13,63 +13,67 @@ LatencyModel::LatencyModel(const Config &cfg, int numCores) :
   std::cout << "Latency model parameters" << std::endl;
   std::cout << "Num cores: " << numCores << std::endl;
 #endif 
+  std::cout << "2D array parameters: " << numCores << std::endl;
   switch(cfg.latencyModelType) {
   default: break;
   case Config::SP_2DMESH:
   case Config::SP_2DTORUS:
-    switchDim = (int) sqrt(cfg.switchesPerChip);
-    chipsDim = (numCores/cfg.tilesPerSwitch) / switchDim;
+    switchDimX = (int) sqrt(cfg.switchesPerChip);
+    switchDimY = (int) cfg.switchesPerChip / switchDimX;
+    chipsDimX = (int) sqrt(numCores/cfg.tilesPerChip);
+    chipsDimY = (int) numCores/cfg.tilesPerChip / chipsDimX;
 #ifdef DEBUG
-    std::cout << "Switches per chip: " << cfg.switchesPerChip
-      << " (" << switchDim << " x " << switchDim << ")" << std::endl;
-    std::cout << "System cores:      " << chipsDim*chipsDim*cfg.tilesPerChip 
-      << " (" << chipsDim << " x " << chipsDim << " x " 
-      << cfg.tilesPerChip << ")" << std::endl;
+    std::cout << "  Switches per chip: " << cfg.switchesPerChip
+      << " (" << switchDimX << " x " << switchDimY << ")" << std::endl;
+    std::cout << "  System cores:      " << chipsDimX*chipsDimY*cfg.tilesPerChip 
+      << " (" << chipsDimX << " x " << chipsDimY << " x " 
+      << cfg.tilesPerChip << " tiles)" << std::endl;
 #endif
     break;
   }
 }
 
-int LatencyModel::latency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket) {
-  //std::cout<<hopsOnChip<<" on chip, "<<hopsOffChip<<" off"<<std::endl;
-  if (hopsOnChip + hopsOffChip == 0)
+int LatencyModel::threadLatency() {
     return cfg.latencyThread;
+}
+
+int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket) {
+  //std::cout<<hopsOnChip<<" on chip, "<<hopsOffChip<<" off"<<std::endl;
   int latency = 0;
   latency += cfg.latencyToken * numTokens;
   // Overhead of opening a route through switches
   if (!inPacket) {
     latency += hopsOffChip > 0 ? cfg.latencyOffChipOpen : 0;
-    latency += cfg.latencyHopOpen * hopsOnChip;
+    latency += cfg.latencyHopOpen * (hopsOnChip + 1);
     latency += cfg.latencyHopOpen * hopsOffChip;
   }
   // Fixed overhead
   latency += hopsOffChip > 0 ? cfg.latencyOffChip : 0;
-  latency += cfg.latencyHop * hopsOnChip;
+  latency += cfg.latencyHop * (hopsOnChip + 1);
   latency += cfg.latencyHop * hopsOffChip;
   return latency;
 }
 
 int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
-  // Assume:
-  //  - Square array of n processors.
-  //  - sqrt(n) is divided by integer value sqrt(m).
-  //  - It is always preferential to traverse intra-chip rather than inter-chip.
-  
+  if (s == t) {
+    return threadLatency();
+  }
+
   // Source coordinates
   int s_chip = s / cfg.tilesPerChip;
-  int s_chipX = s_chip % chipsDim;
-  int s_chipY = s_chip / chipsDim;
+  int s_chipX = s_chip % chipsDimX;
+  int s_chipY = s_chip / chipsDimX;
   int s_switch = (s / cfg.tilesPerSwitch) % cfg.switchesPerChip;
-  int s_switchX = s_switch % switchDim;
-  int s_switchY = s_switch / switchDim;
+  int s_switchX = s_switch % switchDimX;
+  int s_switchY = s_switch / switchDimX;
   
   // Destination coordinates
   int t_chip = t / cfg.tilesPerChip;
-  int t_chipX = t_chip % chipsDim;
-  int t_chipY = t_chip / chipsDim;
+  int t_chipX = t_chip % chipsDimX;
+  int t_chipY = t_chip / chipsDimX;
   int t_switch = (t / cfg.tilesPerSwitch) % cfg.switchesPerChip;
-  int t_switchX = t_switch % switchDim;
-  int t_switchY = t_switch / switchDim;
+  int t_switchX = t_switch % switchDimX;
+  int t_switchY = t_switch / switchDimX;
 
 /*#ifdef DEBUG
   std::cout << "\ns (" << s << ") : "
@@ -98,8 +102,8 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
     // x-dimension
     if (s_chipX != t_chipX) {
       offChipX = abs(s_chipX - t_chipX);
-      onChipX = s_chipX > t_chipX ? s_switchX : switchDim-s_switchX-1;
-      onChipX += s_chipX > t_chipX ? switchDim-t_switchX-1 : t_switchX;
+      onChipX = s_chipX > t_chipX ? s_switchX : switchDimX-s_switchX-1;
+      onChipX += s_chipX > t_chipX ? switchDimX-t_switchX-1 : t_switchX;
     }
     else {
       onChipX = abs(s_switchX - t_switchX);
@@ -107,8 +111,8 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
     // y-dimension
     if (s_chipY != t_chipY) {
       offChipY = abs(s_chipY - t_chipY);
-      onChipY = s_chipY > t_chipY ? s_switchY : switchDim-s_switchY-1;
-      onChipY += s_chipY > t_chipY ? switchDim-t_switchY-1 : t_switchY;
+      onChipY = s_chipY > t_chipY ? s_switchY : switchDimY-s_switchY-1;
+      onChipY += s_chipY > t_chipY ? switchDimY-t_switchY-1 : t_switchY;
     }
     else {
       onChipY = abs(s_switchY - t_switchY);
@@ -124,15 +128,15 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
     if (s_chipX != t_chipX) {
       int betweenX = abs(s_chipX - t_chipX);
       int aroundX = std::min(s_chipX, t_chipX) 
-          + (chipsDim-std::max(s_chipX, t_chipX));
+          + (chipsDimX-std::max(s_chipX, t_chipX));
       offChipX = std::min(betweenX, aroundX);
       int dirX;
       if (offChipX == betweenX)
         dirX = s_chipX < t_chipX ? 1 : -1;
       else
         dirX = s_chipX < t_chipX ? -1 : 1;
-      onChipX = dirX == -1 ? s_switchX : switchDim-s_switchX-1;
-      onChipX += dirX == -1 ? switchDim-t_switchX-1 : t_switchX;
+      onChipX = dirX == -1 ? s_switchX : switchDimX-s_switchX-1;
+      onChipX += dirX == -1 ? switchDimX-t_switchX-1 : t_switchX;
     }
     else {
       onChipX = abs(s_switchX - t_switchX);
@@ -141,15 +145,15 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
     if (s_chipY != t_chipY) {
       int betweenY = abs(s_chipY - t_chipY);
       int aroundY = std::min(s_chipY, t_chipY) 
-          + (chipsDim-std::max(s_chipY, t_chipY));
+          + (chipsDimY-std::max(s_chipY, t_chipY));
       offChipY = std::min(betweenY, aroundY);
       int dirY;
       if (offChipY == betweenY)
         dirY = s_chipY < t_chipY ? 1 : -1;
       else
         dirY = s_chipY < t_chipY ? -1 : 1;
-      onChipY = dirY == -1 ? s_switchY : switchDim-s_switchY-1;
-      onChipY += dirY == -1 ? switchDim-t_switchY-1 : t_switchY;
+      onChipY = dirY == -1 ? s_switchY : switchDimY-s_switchY-1;
+      onChipY += dirY == -1 ? switchDimY-t_switchY-1 : t_switchY;
     }
     else {
       onChipY = abs(s_switchY - t_switchY);
@@ -157,12 +161,12 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
     break;
   }
 
-  return latency(onChipX+onChipY, offChipX+offChipY, numTokens, inPacket);
+  return switchLatency(onChipX+onChipY, offChipX+offChipY, numTokens, inPacket);
 }
 
 int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
   if (s == t) {
-    return latency(0, 0, numTokens, inPacket);
+    return threadLatency();
   }
   else {
     int switchS = int(s / cfg.tilesPerSwitch);
@@ -176,7 +180,7 @@ int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
     int maxHopsOnChip = (int)(log(cfg.switchesPerChip) / log(2));
     if (maxHopsOnChip < numHops) {
       int hopsOffChip = numHops - maxHopsOnChip;
-      return latency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
+      return switchLatency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
       /*if (!inPacket) {
         switch (hopsOffChip) {
           case 1: return 31;
@@ -196,7 +200,7 @@ int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
       }*/
     }
     else {
-      return latency(numHops, 0, numTokens, inPacket);
+      return switchLatency(numHops, 0, numTokens, inPacket);
       /*if (!inPacket) {
         return 10;
       /} else {
@@ -208,24 +212,31 @@ int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
 
 int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
   if (s == t) {
-    return latency(0, 0, numTokens, inPacket);
+    return threadLatency();
   }
   else {
-    switch(numCores) {
-    default: assert(0);
-    case 16:
-    case 64:
-    case 256: 
-      return latency(0, 2, numTokens, inPacket);
-    case 1024:
-      return latency(2, 2, numTokens, inPacket);
+    // If attached to the same edge switch
+    if ((int)(s/cfg.tilesPerSwitch) == (int)(t/cfg.tilesPerSwitch)) {
+      return switchLatency(0, 0, numTokens, inPacket);
+    }
+    // Otherwise traverse edge-core-edge switches
+    else {
+      switch(numCores) {
+      default: assert(0);
+      case 16:
+      case 64:
+      case 256: 
+        return switchLatency(0, 2, numTokens, inPacket);
+      case 1024:
+        return switchLatency(2, 2, numTokens, inPacket);
+      }
     }
   }
 }
 
 int LatencyModel::calcTree(int s, int t, int numTokens, bool inPacket) {
   if (s == t) {
-    return latency(0, 0, numTokens, inPacket);
+    return threadLatency();
   }
   else {
     int degree = cfg.tilesPerSwitch-1;
@@ -235,10 +246,10 @@ int LatencyModel::calcTree(int s, int t, int numTokens, bool inPacket) {
     int maxHopsOnChip = 2 * ((int)(log(cfg.switchesPerChip) / log(degree)));
     if (maxHopsOnChip < numHops) {
       int hopsOffChip = numHops - maxHopsOnChip;
-      return latency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
+      return switchLatency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
     }
     else {
-      return latency(numHops, 0, numTokens, inPacket);
+      return switchLatency(numHops, 0, numTokens, inPacket);
     }
   }
 }
