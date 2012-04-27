@@ -38,18 +38,22 @@ int LatencyModel::threadLatency() {
 }
 
 int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket) {
+  // Tweak to make latency model work
+  if (hopsOffChip == 0) {
+    hopsOnChip++;
+  }
   //std::cout<<hopsOnChip<<" on chip, "<<hopsOffChip<<" off"<<std::endl;
   int latency = 0;
   latency += cfg.latencyToken * numTokens;
   // Overhead of opening a route through switches
   if (!inPacket) {
     latency += hopsOffChip > 0 ? cfg.latencyOffChipOpen : 0;
-    latency += cfg.latencyHopOpen * (hopsOnChip + 1);
+    latency += cfg.latencyHopOpen * hopsOnChip;
     latency += cfg.latencyHopOpen * hopsOffChip;
   }
   // Fixed overhead
   latency += hopsOffChip > 0 ? cfg.latencyOffChip : 0;
-  latency += cfg.latencyHop * (hopsOnChip + 1);
+  latency += cfg.latencyHop * hopsOnChip;
   latency += cfg.latencyHop * hopsOffChip;
   return latency;
 }
@@ -203,7 +207,7 @@ int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
       return switchLatency(numHops, 0, numTokens, inPacket);
       /*if (!inPacket) {
         return 10;
-      /} else {
+      } else {
         return 8;
       }*/
     }
