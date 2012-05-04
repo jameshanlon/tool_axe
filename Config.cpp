@@ -54,9 +54,6 @@ int Config::read(const std::string &file) {
       else if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
         latencyModelType = SP_CLOS;
       }
-      else if (!strncmp("sp-fattree", str, strlen("sp-fattree"))) {
-        latencyModelType = SP_FATTREE;
-      }
       else {
         std::cout << "Error: invalid latency model.\n";
         return 0;

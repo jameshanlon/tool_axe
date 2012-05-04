@@ -12,8 +12,8 @@ LatencyModel::LatencyModel(const Config &cfg, int numCores) :
 #ifdef DEBUG
   std::cout << "Latency model parameters" << std::endl;
   std::cout << "Num cores: " << numCores << std::endl;
-#endif 
   std::cout << "2D array parameters: " << numCores << std::endl;
+#endif 
   switch(cfg.latencyModelType) {
   default: break;
   case Config::SP_2DMESH:
@@ -238,26 +238,6 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
   }
 }
 
-int LatencyModel::calcTree(int s, int t, int numTokens, bool inPacket) {
-  if (s == t) {
-    return threadLatency();
-  }
-  else {
-    int degree = cfg.tilesPerSwitch-1;
-    int switchS = int(s / cfg.tilesPerSwitch);
-    int switchT = int(t / cfg.tilesPerSwitch);
-    int numHops = 2 * (((int)(log(abs(switchS-switchT)) / log(degree))) + 1);
-    int maxHopsOnChip = 2 * ((int)(log(cfg.switchesPerChip) / log(degree)));
-    if (maxHopsOnChip < numHops) {
-      int hopsOffChip = numHops - maxHopsOnChip;
-      return switchLatency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
-    }
-    else {
-      return switchLatency(numHops, 0, numTokens, inPacket);
-    }
-  }
-}
-
 ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode, 
     uint32_t tCore, uint32_t tNode, int numTokens, bool inPacket) {
  
@@ -291,10 +271,6 @@ ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode,
   
   case Config::SP_CLOS:
     latency = calcClos(s, t, numTokens, inPacket);
-    break;
-
-  case Config::SP_FATTREE:
-    latency = calcTree(s, t, numTokens, inPacket);
     break;
   }
 

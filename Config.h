@@ -111,7 +111,6 @@ class Config {
       SP_2DTORUS,
       SP_HYPERCUBE,
       SP_CLOS,
-      SP_FATTREE
     };
     uint32_t ramSizeLog;
     uint32_t ramSize;
