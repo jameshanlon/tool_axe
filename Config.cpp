@@ -36,10 +36,12 @@ int Config::read(const std::string &file) {
     READ_VAL_PARAM("latency-memory",        latencyMemory);
     READ_VAL_PARAM("latency-thread",        latencyThread);
     READ_VAL_PARAM("latency-token",         latencyToken);
-    READ_VAL_PARAM("latency-hop",           latencyHop);
-    READ_VAL_PARAM("latency-off-chip",      latencyOffChip);
-    READ_VAL_PARAM("latency-open-hop",      latencyHopOpen);
-    READ_VAL_PARAM("latency-open-off-chip", latencyOffChipOpen);
+    READ_VAL_PARAM("latency-switch-open",   latencySwitchOpen);
+    READ_VAL_PARAM("latency-switch-closed", latencySwitchClosed);
+    READ_VAL_PARAM("latency-tile-switch",   latencyTileSwitch);
+    READ_VAL_PARAM("latency-serialisation", latencySerialisation);
+    READ_VAL_PARAM("latency-link-on-chip",  latencyLinkOnChip);
+    READ_VAL_PARAM("latency-link-off-chip", latencyLinkOffChip);
     if (!strncmp("latency-model", line, strlen("latency-model"))) {
       sscanf(line, "latency-model%[^\"]\"%[^\"]\"", junk, str);
       if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
@@ -78,17 +80,18 @@ void Config::display() {
   std::cout.width(26);
   std::cout << std::left << "Configuration " << std::endl;
   std::cout.fill(' ');
-  PRINT_PARAM("RAM size (KB)",         ramSize);
-  PRINT_PARAM("Switches per chip",     switchesPerChip);
-  PRINT_PARAM("Tiles per switch",      tilesPerSwitch);
-  PRINT_PARAM("Tiles per chip",        tilesPerChip);
-  PRINT_PARAM("Latency memory",        latencyMemory/CYCLES_PER_TICK);
-  PRINT_PARAM("Latency thread",        latencyThread);
-  PRINT_PARAM("Latency token",         latencyToken);
-  PRINT_PARAM("Latency hop",           latencyHop);
-  PRINT_PARAM("Latency off-chip",      latencyOffChip);
-  PRINT_PARAM("Latency hop open",      latencyHopOpen);
-  PRINT_PARAM("Latency off-chip open", latencyOffChipOpen);
-  PRINT_PARAM("Latency model",         latencyModelType);
+  PRINT_PARAM("RAM size (KB)",          ramSize);
+  PRINT_PARAM("Switches per chip",      switchesPerChip);
+  PRINT_PARAM("Tiles per switch",       tilesPerSwitch);
+  PRINT_PARAM("Tiles per chip",         tilesPerChip);
+  PRINT_PARAM("Latency memory",         latencyMemory/CYCLES_PER_TICK);
+  PRINT_PARAM("Latency thread",         latencyThread);
+  PRINT_PARAM("Latency token",          latencyToken);
+  PRINT_PARAM("Latency switch open",    latencySwitchOpen);
+  PRINT_PARAM("Latency switch closed",  latencySwitchClosed);
+  PRINT_PARAM("Latency tile to switch", latencyTileSwitch);
+  PRINT_PARAM("Latency serialisation",  latencySerialisation);
+  PRINT_PARAM("Latency link on-chip",   latencyLinkOnChip);
+  PRINT_PARAM("Latency link off-chip",  latencyLinkOffChip);
 }
 

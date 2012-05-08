@@ -121,10 +121,12 @@ class Config {
     unsigned latencyMemory;
     unsigned latencyThread;
     unsigned latencyToken;
-    unsigned latencyHop;
-    unsigned latencyOffChip;
-    unsigned latencyHopOpen;
-    unsigned latencyOffChipOpen;
+    unsigned latencySwitchOpen;
+    unsigned latencySwitchClosed;
+    unsigned latencyTileSwitch;
+    unsigned latencySerialisation;
+    unsigned latencyLinkOnChip;
+    unsigned latencyLinkOffChip;
     LatencyModelType latencyModelType;
     
     Config() {

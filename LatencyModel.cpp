@@ -37,24 +37,24 @@ int LatencyModel::threadLatency() {
     return cfg.latencyThread;
 }
 
-int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket) {
-  // Tweak to make latency model work
-  if (hopsOffChip == 0) {
-    hopsOnChip++;
-  }
+int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip, 
+    int numTokens, bool inPacket) {
   //std::cout<<hopsOnChip<<" on chip, "<<hopsOffChip<<" off"<<std::endl;
   int latency = 0;
   latency += cfg.latencyToken * numTokens;
+  latency += cfg.latencyTileSwitch * 2;
   // Overhead of opening a route through switches
   if (!inPacket) {
-    latency += hopsOffChip > 0 ? cfg.latencyOffChipOpen : 0;
-    latency += cfg.latencyHopOpen * hopsOnChip;
-    latency += cfg.latencyHopOpen * hopsOffChip;
+    latency += (cfg.latencySwitchClosed + cfg.latencyLinkOnChip) * hopsOnChip;
+    latency += (cfg.latencySwitchClosed + cfg.latencyLinkOffChip +
+        cfg.latencySerialisation) * hopsOffChip;
   }
   // Fixed overhead
-  latency += hopsOffChip > 0 ? cfg.latencyOffChip : 0;
-  latency += cfg.latencyHop * hopsOnChip;
-  latency += cfg.latencyHop * hopsOffChip;
+  else {
+    latency += (cfg.latencySwitchOpen + cfg.latencyLinkOnChip) * hopsOnChip;
+    latency += (cfg.latencySwitchOpen + cfg.latencyLinkOffChip +
+        cfg.latencySerialisation) * hopsOffChip;
+  }
   return latency;
 }
 
@@ -214,6 +214,7 @@ int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
   }
 }
 
+// TODO: fix this for new Clos arrangement
 int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
   if (s == t) {
     return threadLatency();
@@ -223,6 +224,10 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
     if ((int)(s/cfg.tilesPerSwitch) == (int)(t/cfg.tilesPerSwitch)) {
       return switchLatency(0, 0, numTokens, inPacket);
     }
+    // If in the same chip
+    else if ((int)(s/cfg.tilesPerChip) == (int)(t/cfg.tilesPerChip)) {
+      return switchLatency(2, 0, numTokens, inPacket);
+    }
     // Otherwise traverse edge-core-edge switches
     else {
       switch(numCores) {
@@ -230,8 +235,8 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
       case 16:
       case 64:
       case 256: 
-        return switchLatency(0, 2, numTokens, inPacket);
       case 1024:
+      case 4096:
         return switchLatency(2, 2, numTokens, inPacket);
       }
     }
