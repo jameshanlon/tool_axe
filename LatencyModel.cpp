@@ -43,17 +43,15 @@ int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip,
   int latency = 0;
   latency += cfg.latencyToken * numTokens;
   latency += cfg.latencyTileSwitch * 2;
+  // Fixed overhead
+  latency += (hopsOnChip+hopsOffChip+1)*cfg.latencySwitch;
+  latency += hopsOnChip*cfg.latencyLinkOnChip;
+  latency += hopsOffChip*cfg.latencyLinkOffChip;
+  latency += (hopsOnChip+hopsOffChip>0) ? cfg.latencySerialisation : 0;
   // Overhead of opening a route through switches
   if (!inPacket) {
-    latency += (cfg.latencySwitchClosed + cfg.latencyLinkOnChip) * hopsOnChip;
-    latency += (cfg.latencySwitchClosed + cfg.latencyLinkOffChip +
-        cfg.latencySerialisation) * hopsOffChip;
-  }
-  // Fixed overhead
-  else {
-    latency += (cfg.latencySwitchOpen + cfg.latencyLinkOnChip) * hopsOnChip;
-    latency += (cfg.latencySwitchOpen + cfg.latencyLinkOffChip +
-        cfg.latencySerialisation) * hopsOffChip;
+    latency += (hopsOnChip+hopsOffChip+1)*cfg.latencySwitchClosed;
+    latency += (hopsOnChip+hopsOffChip>0) ? cfg.latencySwitchClosedOH : 0;
   }
   return latency;
 }
