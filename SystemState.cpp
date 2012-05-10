@@ -7,12 +7,22 @@
 #include "SystemState.h"
 #include "Node.h"
 #include "Core.h"
+#include "Trace.h"
+#include "TokenDelay.h"
+
+using namespace Register;
 
 SystemState::~SystemState()
 {
-  for (std::vector<Node*>::iterator it = nodes.begin(), e = nodes.end();
-       it != e; ++it) {
+  for (node_iterator it = nodes.begin(), e = nodes.end(); it != e; ++it) {
     delete *it;
+  }
+}
+
+void SystemState::finalize()
+{
+  for (node_iterator it = nodes.begin(), e = nodes.end(); it != e; ++it) {
+    (*it)->finalize();
   }
 }
 
@@ -23,28 +33,8 @@ void SystemState::addNode(std::auto_ptr<Node> n)
   n.release();
 }
 
-ThreadState *SystemState::deschedule(ThreadState &current)
-{
-  assert(&current == currentThread);
-  //std::cout << "Deschedule " << current->id() << "\n";
-  current.waiting() = true;
-  currentThread = 0;
-  handleNonThreads();
-  if (scheduler.empty()) {
-    Tracer::get().noRunnableThreads(*this);
-    current.pc = current.getParent().getNoThreadsAddr();
-    current.waiting() = false;
-    currentThread = &current;
-    return &current;
-  }
-  ThreadState &next = static_cast<ThreadState&>(scheduler.front());
-  currentThread = &next;
-  scheduler.pop();
-  return &next;
-}
-
 void SystemState::
-completeEvent(ThreadState &t, EventableResource &res, bool interrupt)
+completeEvent(Thread &t, EventableResource &res, bool interrupt)
 {
   if (interrupt) {
     t.regs[SSR] = t.sr.to_ulong();
@@ -74,7 +64,7 @@ ChanEndpoint *SystemState::getChanendDest(ResourceID ID)
 {
   unsigned coreID = ID.node();
   // TODO build lookup map.
-  
+
   for (node_iterator outerIt = node_begin(), outerE = node_end();
        outerIt != outerE; ++outerIt) {
     Node &node = **outerIt;
@@ -113,14 +103,14 @@ void SystemState::dump(double elapsedTime) {
         << std::setw(12) << "Insts" << " "
         << std::setw(12) << "Insts/cycle" << std::endl;
       for (int i=0; i<NUM_THREADS; i++) {
-        ThreadState &threadState = core.getThread(i).getState();
-        totalCount += threadState.count;
-        maxTime = maxTime > threadState.time ? maxTime : threadState.time;
-        double ratio = (double) threadState.count / (double) threadState.time;
+        Thread &thread = core.getThread(i);
+        totalCount += thread.count;
+        maxTime = maxTime > thread.time ? maxTime : thread.time;
+        double ratio = (double) thread.count / (double) thread.time;
         std::cout 
           << std::setw(8) << i << " " 
-          << std::setw(12) << threadState.time << " "
-          << std::setw(12) << threadState.count << " " 
+          << std::setw(12) << thread.time << " "
+          << std::setw(12) << thread.count << " " 
           << std::setw(12) << std::setprecision(2) << ratio << std::endl;
       }
     }
@@ -143,8 +133,8 @@ void SystemState::dump(double elapsedTime) {
     << std::setprecision(4) << aggregateRam << "MB" << std::endl;
   std::cout << "Core frequency:               " 
     << std::setprecision(4) << coreFreqMHz << "MHz" << std::endl;
-  std::cout << "Memory latency (cycles):      "
-    << MEMORY_ACCESS_CYCLES << std::endl;
+  //std::cout << "Memory latency (cycles):      "
+  //  << MEMORY_ACCESS_CYCLES << std::endl;
   
   // Simulated performance
   double seconds = (double) maxTime / 100000000.0;
@@ -185,3 +175,24 @@ void SystemState::dump(double elapsedTime) {
     << std::setprecision(2) << slowdown << "x" << std::endl;
 }
 
+int SystemState::run()
+{
+  try {
+    while (!scheduler.empty()) {
+      Runnable &runnable = scheduler.front();
+      currentRunnable = &runnable;
+      scheduler.pop();
+      runnable.run(runnable.wakeUpTime);
+      
+      // Discard token delays once they have been applied
+      TokenDelay *d = dynamic_cast<TokenDelay *>(&runnable);
+      if (d != 0) {
+        delete &runnable;
+      }
+    }
+  } catch (ExitException &ee) {
+    return ee.getStatus();
+  }
+  Tracer::get().noRunnableThreads(*this);
+  return 1;
+}

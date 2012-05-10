@@ -65,16 +65,6 @@
 // between threads.
 #define DIV_CYCLES 32
 
-// Number of cycles a memory access takes to complete
-// This appears in the main loop in scope of a reference to the Config object
-#define MEMORY_ACCESS_CYCLES cfg.latencyMemory
-
-// Latency model parameters (cycles)
-//#define LATENCY_SWITCH    3  // Latency in and out of the switch
-//#define LATENCY_THREAD    1  // Between threads
-//#define LATENCY_ON_CHIP   5  // 1 hop
-//#define LATENCY_OFF_CHIP  10 // 1 hop
-
 // 2D mesh and torus topology parameters
 #define DEFAULT_SWITCH_EXP_BASE   2
 #define DEFAULT_SWITCHES_PER_CHIP 1 // Must be a positive power of 2
@@ -87,7 +77,6 @@ typedef uint64_t ticks_t;
 #define EXPENSIVE_CHECKS 0
 
 #ifdef __GNUC__
-#define DIRECT_THREADED
 #define UNUSED(x) x __attribute__((__unused__))
 #endif // __GNUC__
 

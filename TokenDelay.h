@@ -16,7 +16,7 @@ public:
   ChanEndpoint *dest;
 
   TokenDelay(ChanEndpoint *dest) : 
-    Runnable(TOKEN_DELAY),
+    Runnable(),
     dest(dest)
   {}
 
