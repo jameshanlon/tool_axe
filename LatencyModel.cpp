@@ -39,6 +39,7 @@ int LatencyModel::threadLatency() {
 
 int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip, 
     int numTokens, bool inPacket) {
+  assert(hopsOffChip==0);
   //std::cout<<hopsOnChip<<" on chip, "<<hopsOffChip<<" off"<<std::endl;
   int latency = 0;
   latency += cfg.latencyToken * numTokens;
@@ -224,19 +225,22 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
     }
     // If in the same chip
     else if ((int)(s/cfg.tilesPerChip) == (int)(t/cfg.tilesPerChip)) {
-      return switchLatency(2, 0, numTokens, inPacket);
-    }
-    // Otherwise traverse edge-core-edge switches
-    else {
       switch(numCores) {
       default: assert(0);
       case 16:
       case 64:
       case 256: 
+        return switchLatency(2, 0, numTokens, inPacket);
       case 1024:
       case 4096:
-        return switchLatency(2, 2, numTokens, inPacket);
+        return switchLatency(4, 0, numTokens, inPacket);
       }
+    }
+    // Otherwise traverse edge-core-edge switches
+    else {
+      // Not modelling these
+      assert(0);
+      return 0;
     }
   }
 }
