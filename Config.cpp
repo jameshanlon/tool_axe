@@ -38,8 +38,8 @@ int Config::read(const std::string &file) {
     READ_VAL_PARAM("latency-token",            latencyToken);
     READ_VAL_PARAM("latency-tile-switch",      latencyTileSwitch);
     READ_VAL_PARAM("latency-switch",           latencySwitch);
-    READ_VAL_PARAM("latency-switch-closed",    latencySwitchClosed);
-    READ_VAL_PARAM("latency-switch-closed-oh", latencySwitchClosedOH);
+    READ_VAL_PARAM("latency-closed-switch",    latencySwitchClosed);
+    READ_VAL_PARAM("latency-closed-oh-switch", latencySwitchClosedOH);
     READ_VAL_PARAM("latency-serialisation",    latencySerialisation);
     READ_VAL_PARAM("latency-link-on-chip",     latencyLinkOnChip);
     READ_VAL_PARAM("latency-link-off-chip",    latencyLinkOffChip);

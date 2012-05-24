@@ -145,7 +145,6 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
     }
   }
   else {
-    uint32_t phyAddr;
     Core &core = getOwner().getParent();
     switch (value) {
     case CT_END:
@@ -158,12 +157,11 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           illegalMemAccessPacket();
           return;
         }
-        phyAddr = core.physicalAddress(memAddress);
-        if (!(!((phyAddr) & 3) && core.isValidAddress(phyAddr))) {
+        if (!core.isValidAddress(memAddress)) {
           illegalMemAddress();
           return;
         }
-        out(getOwner(), core.loadWord(phyAddr), time);
+        out(getOwner(), core.loadWord(memAddress), time);
         outct(getOwner(), CT_END, time+CYCLES_PER_TICK);
         //debug(); std::cout<<"Reading from address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
@@ -174,12 +172,11 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           illegalMemAccessPacket();
           return;
         }
-        phyAddr = core.physicalAddress(memAddress);
-        if (!(!((phyAddr) & 3) && core.isValidAddress(phyAddr))) {
+        if (!core.isValidAddress(memAddress)) {
           illegalMemAddress();
           return;
         }
-        core.storeWord(memValue, phyAddr);
+        core.storeWord(memValue, memAddress);
         outct(getOwner(), CT_END, time);
         //debug(); std::cout<<"Writing to address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<memValue<std::endl;

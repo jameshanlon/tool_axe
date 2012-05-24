@@ -521,6 +521,7 @@ createSESystem(const Config &cfg, const char *filename, int numCores)
 
   node->setNodeID(jtagIndex);
   systemState->addNode(node);
+  systemState->finalize();
   return systemState;
 }
 
