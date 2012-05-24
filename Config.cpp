@@ -39,7 +39,6 @@ int Config::read(const std::string &file) {
     READ_VAL_PARAM("latency-tile-switch",      latencyTileSwitch);
     READ_VAL_PARAM("latency-switch",           latencySwitch);
     READ_VAL_PARAM("latency-closed-switch",    latencySwitchClosed);
-    READ_VAL_PARAM("latency-closed-oh-switch", latencySwitchClosedOH);
     READ_VAL_PARAM("latency-serialisation",    latencySerialisation);
     READ_VAL_PARAM("latency-link-on-chip",     latencyLinkOnChip);
     READ_VAL_PARAM("latency-link-off-chip",    latencyLinkOffChip);
@@ -81,19 +80,18 @@ void Config::display() {
   std::cout.width(26);
   std::cout << std::left << "Configuration " << std::endl;
   std::cout.fill(' ');
-  PRINT_PARAM("RAM size (KB)",                  ramSize);
-  PRINT_PARAM("Switches per chip",              switchesPerChip);
-  PRINT_PARAM("Tiles per switch",               tilesPerSwitch);
-  PRINT_PARAM("Tiles per chip",                 tilesPerChip);
-  PRINT_PARAM("Latency memory",                 latencyMemory/CYCLES_PER_TICK);
-  PRINT_PARAM("Latency thread",                 latencyThread);
-  PRINT_PARAM("Latency token",                  latencyToken);
-  PRINT_PARAM("Latency tile to switch",         latencyTileSwitch);
-  PRINT_PARAM("Latency switch",                 latencySwitch);
-  PRINT_PARAM("Latency switch closed",          latencySwitchClosed);
-  PRINT_PARAM("Latency switch closed overhead", latencySwitchClosedOH);
-  PRINT_PARAM("Latency serialisation",          latencySerialisation);
-  PRINT_PARAM("Latency link on-chip",           latencyLinkOnChip);
-  PRINT_PARAM("Latency link off-chip",          latencyLinkOffChip);
+  PRINT_PARAM("RAM size (KB)",          ramSize);
+  PRINT_PARAM("Switches per chip",      switchesPerChip);
+  PRINT_PARAM("Tiles per switch",       tilesPerSwitch);
+  PRINT_PARAM("Tiles per chip",         tilesPerChip);
+  PRINT_PARAM("Latency memory",         latencyMemory/CYCLES_PER_TICK);
+  PRINT_PARAM("Latency thread",         latencyThread);
+  PRINT_PARAM("Latency token",          latencyToken);
+  PRINT_PARAM("Latency tile to switch", latencyTileSwitch);
+  PRINT_PARAM("Latency switch",         latencySwitch);
+  PRINT_PARAM("Latency switch closed",  latencySwitchClosed);
+  PRINT_PARAM("Latency serialisation",  latencySerialisation);
+  PRINT_PARAM("Latency link on-chip",   latencyLinkOnChip);
+  PRINT_PARAM("Latency link off-chip",  latencyLinkOffChip);
 }
 

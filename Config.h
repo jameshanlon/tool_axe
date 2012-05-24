@@ -113,7 +113,6 @@ class Config {
     unsigned latencyTileSwitch;
     unsigned latencySwitch;
     unsigned latencySwitchClosed;
-    unsigned latencySwitchClosedOH;
     unsigned latencySerialisation;
     unsigned latencyLinkOnChip;
     unsigned latencyLinkOffChip;

@@ -52,7 +52,6 @@ int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip,
   // Overhead of opening a route through switches
   if (!inPacket) {
     latency += (hopsOnChip+hopsOffChip+1)*cfg.latencySwitchClosed;
-    latency += (hopsOnChip+hopsOffChip>0) ? cfg.latencySwitchClosedOH : 0;
   }
   return latency;
 }
