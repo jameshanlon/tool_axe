@@ -226,11 +226,13 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
     else if ((int)(s/cfg.tilesPerChip) == (int)(t/cfg.tilesPerChip)) {
       switch(numCores) {
       default: assert(0);
-      case 16:
       case 64:
-      case 256: 
+      case 128:
+      case 256:
+      case 512:
         return switchLatency(2, 0, numTokens, inPacket);
       case 1024:
+      case 2048:
       case 4096:
         return switchLatency(4, 0, numTokens, inPacket);
       }
