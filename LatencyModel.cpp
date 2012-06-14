@@ -234,6 +234,9 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
       case 1024:
       case 2048:
       case 4096:
+        if ((int)(s/(cfg.tilesPerSwitch*cfg.tilesPerSwitch)) ==
+            (int)(t/(cfg.tilesPerSwitch*cfg.tilesPerSwitch)))
+          return switchLatency(2, 0, numTokens, inPacket);
         return switchLatency(4, 0, numTokens, inPacket);
       }
     }
