@@ -127,8 +127,8 @@ public:
   }
 
   void updateExecutionFrequency(uint32_t shiftedAddress) {
-    if (updateExecutionFrequencyFromStub(shiftedAddress))
-      runJIT(shiftedAddress);
+    //if (updateExecutionFrequencyFromStub(shiftedAddress))
+    //  runJIT(shiftedAddress);
   }
 
   uint32_t targetPc(unsigned pc) const

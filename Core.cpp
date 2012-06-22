@@ -360,6 +360,7 @@ void Core::runJIT(uint32_t jitPc)
 {
   if (!isValidPc(jitPc))
     return;
+  std::cout<<"Running JIT..."<<std::endl;
   executionFrequency[jitPc] = MIN_EXECUTION_FREQUENCY;
   JIT::compileBlock(*this, jitPc);
 }

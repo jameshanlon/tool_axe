@@ -340,7 +340,7 @@ JITReturn Instruction_TSETMR_2r(Thread &thread) {
 }
 
 template<bool tracing> JITReturn Instruction_RUN_JIT(Thread &thread) {
-  CORE.runJIT(THREAD.pendingPc);
+  //CORE.runJIT(THREAD.pendingPc);
   THREAD.pc = THREAD.pendingPc;
   return JIT_RETURN_END_TRACE;
 }
