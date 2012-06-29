@@ -240,6 +240,8 @@ bool Chanend::setData(Thread &thread, uint32_t value, ticks_t time)
       destID.type() != RES_TYPE_CONFIG)
     return false;
   dest = thread.getParent().getChanendDest(destID);
+  if (!dest) 
+    std::cout << "Could not SETD" << std::endl;
   return true;
 }
 

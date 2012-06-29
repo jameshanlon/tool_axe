@@ -2785,6 +2785,7 @@ void add()
   f0r("DENTSP", "dentsp", "").setUnimplemented();
   f0r("CLRE", "clre", "THREAD.clre();\n").setYieldBefore();
   f0r("WAITEU", "waiteu",
+      //"THREAD.dump();\n"
       "THREAD.enableEvents();\n"
       "%deschedule\n").setYieldBefore().setCanEvent();
   f0r("SSYNC", "ssync",

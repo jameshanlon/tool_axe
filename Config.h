@@ -41,12 +41,8 @@
 #define DEFAULT_RAM_SIZE_LOG 16 // 0.07MB
 //#define RAM_SIZE_LOG 20 // 1.05MB
 //#define RAM_SIZE_LOG 22 // 4.19MB
-
-/// Default size of ram in bytes
-//#define RAM_SIZE (1 << ramSizeLog)
-/// Default ram base
-//#define RAM_BASE RAM_SIZE
-//#define RAM_BASE (1 << 16)
+#define RAM_SIZE (1 << DEFAULT_RAM_SIZE_LOG)
+#define RAM_BASE RAM_SIZE
 
 /// Size of the (input) buffer in a chanend.
 #define CHANEND_BUFFER_SIZE 8
@@ -121,8 +117,8 @@ class Config {
     Config() {
       // Set defaults
       ramSizeLog       = DEFAULT_RAM_SIZE_LOG;
-      ramSize          = 1 << ramSizeLog;
-      ramBase          = 1 << DEFAULT_RAM_SIZE_LOG;
+      ramSize          = RAM_SIZE;
+      ramBase          = RAM_BASE;
       latencyModelType = NONE;
       latencyMemory    = 0;
     }

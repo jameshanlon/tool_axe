@@ -30,7 +30,6 @@ int Config::read(const std::string &file) {
   
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
-    READ_VAL_PARAM("ram-size-log",             ramSizeLog);
     READ_VAL_PARAM("tiles-per-switch",         tilesPerSwitch);
     READ_VAL_PARAM("switches-per-chip",        switchesPerChip);
     READ_VAL_PARAM("latency-memory",           latencyMemory);
@@ -72,7 +71,6 @@ int Config::read(const std::string &file) {
   latencyMemory *= CYCLES_PER_TICK;
 
   // (Re)calculate consequential parameters
-  ramSize = 1 << ramSizeLog;
   tilesPerChip = switchesPerChip * tilesPerSwitch;
 
   return 1;

@@ -353,6 +353,7 @@ void Tracer::dumpThreadSummary(const Core &core)
     *line.buf << " at ";
     printThreadPC();
     printCommonEnd();
+    //t.dump();
   }
 }
 

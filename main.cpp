@@ -192,6 +192,7 @@ static void readElf(const char *filename, const XEElfSector *elfSector,
   }
   uint32_t ram_base = core.ram_base;
   uint32_t ram_size = core.getRamSize();
+  //std::cout<<"Ram base "<<std::hex<<ram_base<<", ram size "<<ram_size<<std::dec<<std::endl;
   for (unsigned i = 0; i < num_phdrs; i++) {
     GElf_Phdr phdr;
     if (gelf_getphdr(e, i, &phdr) == NULL) {
@@ -201,6 +202,7 @@ static void readElf(const char *filename, const XEElfSector *elfSector,
     if (phdr.p_filesz == 0) {
       continue;
     }
+    //std::cout<<std::hex<<"p_paddr "<<phdr.p_paddr<<" p_memsz "<<phdr.p_memsz<<std::dec<<std::endl;
     if (phdr.p_offset > ElfSize) {
     	std::cerr << "Invalid offet in ELF program header" << i << std::endl;
     	std::exit(1);

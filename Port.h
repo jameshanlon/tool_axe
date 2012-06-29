@@ -93,6 +93,9 @@ private:
   MasterSlave masterSlave;
   PortType portType;
   Signal pinsInputValue;
+  /// For writing binary files
+  FILE *file;
+  bool fileOpen;
 
   /// Return the value currently being output to the ports pins.
   Signal getPinsOutputValue() const;

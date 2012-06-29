@@ -8,6 +8,7 @@
 #include "Core.h"
 #include "PortNames.h"
 #include <algorithm>
+#include <stdio.h>
 
 Port::Port() :
   EventableResource(RES_TYPE_PORT),
@@ -20,7 +21,8 @@ Port::Port() :
   pausedSync(0),
   readyOut(false),
   time(0),
-  pinsInputValue() {}
+  pinsInputValue(),
+  fileOpen(false) {}
 
 std::string Port::getName() const
 {
@@ -470,7 +472,7 @@ in(Thread &thread, ticks_t threadTime, uint32_t &value)
     value = 0;
     return CONTINUE;
   }
-  if (outputPort) {
+  /*if (outputPort) {
     pausedIn = &thread;
     scheduleUpdateIfNeeded();
     return DESCHEDULE;
@@ -491,7 +493,23 @@ in(Thread &thread, ticks_t threadTime, uint32_t &value)
   }
   pausedIn = &thread;
   scheduleUpdateIfNeeded();
-  return DESCHEDULE;
+  return DESCHEDULE;*/
+  
+  int num = getID().num();
+  if (num == 0) {
+    value = getchar();
+  }
+  else {
+    if (!fileOpen) {
+      char fname[] = {'a', 'x', 'e', ' ', 0};
+      fname[3] = num + '0';
+      file = fopen(fname, "wb");
+      fileOpen = true;
+    }
+    value = fgetc(file);
+  }
+  
+  return CONTINUE;
 }
 
 Resource::ResOpResult Port::
@@ -542,7 +560,7 @@ out(Thread &thread, uint32_t value, ticks_t threadTime)
   if (portType != DATAPORT) {
     return CONTINUE;
   }
-  if (outputPort) {
+  /*if (outputPort) {
     if (transferRegValid) {
       pausedOut = &thread;
       scheduleUpdateIfNeeded();
@@ -551,10 +569,28 @@ out(Thread &thread, uint32_t value, ticks_t threadTime)
   } else {
     // TODO probably wrong.
     validShiftRegEntries = 1;
-  }
+  }*/
   transferRegValid = true;
   transferReg = value;
   outputPort = true;
+ 
+  int num = getID().num();
+  //std::cout<<"port"<<std::hex<<(getID()>>8)<<std::endl;
+  if (num == 0) {
+    putchar(value); 
+  }
+  else {
+    if (!fileOpen) {
+      char fname[] = {'a', 'x', 'e', ' ', 0};
+      fname[3] = num + '0';
+      file = fopen(fname, "wb");
+      fileOpen = true;
+      //std::cout<<"Opening binary file "<<fname<<std::endl;
+    }
+    fputc(value, file);
+    //std::cout<<"writing to binary file"<<std::endl;
+  }
+  
   scheduleUpdateIfNeeded();
   return CONTINUE;
 }
