@@ -54,6 +54,7 @@ public:
   core_iterator core_end() { return cores.end(); }
   const_core_iterator core_begin() const { return cores.begin(); }
   const_core_iterator core_end() const { return cores.end(); }
+  int numCores();
 };
 
 #endif // _Node_h_

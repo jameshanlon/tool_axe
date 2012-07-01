@@ -88,3 +88,15 @@ bool Node::hasMatchingNodeID(ResourceID ID)
       return ID.node() == nodeID;
   }
 }
+
+int Node::numCores()
+{
+  int n = 0;
+  for (std::vector<Core*>::iterator it = cores.begin(), e = cores.end();
+       it != e; ++it) {
+    n++;
+  }
+  return n;
+}
+
+

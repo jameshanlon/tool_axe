@@ -249,6 +249,7 @@ if (Tracer::getInstance().getTracingEnabled()) { \
 Tracer::getInstance().regWrite(register, value); \
 } \
 } while(0)
+#define STATS(...) void()
 
 SyscallHandler::SycallOutcome SyscallHandlerImpl::
 doSyscall(Thread &thread, int &retval)

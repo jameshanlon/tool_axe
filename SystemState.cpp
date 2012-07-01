@@ -8,6 +8,7 @@
 #include "Node.h"
 #include "Core.h"
 #include "Trace.h"
+#include "Stats.h"
 #include "TokenDelay.h"
 
 using namespace Register;
@@ -83,7 +84,15 @@ ChanEndpoint *SystemState::getChanendDest(ResourceID ID)
   return 0;
 }
 
-void SystemState::dump(double elapsedTime) {
+int SystemState::numCores() {
+  int n = 0;
+  for (node_iterator it = nodes.begin(), e = nodes.end(); it != e; ++it) {
+    n += (*it)->numCores();
+  }
+  return n;
+}
+
+void SystemState::dump(/*double elapsedTime*/) {
   long totalCount = 0;
   ticks_t maxTime = 0;
   int numCores = 0;
@@ -160,7 +169,7 @@ void SystemState::dump(double elapsedTime) {
     << peakGOpsPerSec << " GIPS)" << std::endl;
   
   // Simulation performance
-  double opsPerRealSec = (double) totalCount / elapsedTime;
+  /*double opsPerRealSec = (double) totalCount / elapsedTime;
   double gOpsPerRealSec = opsPerRealSec / 1000000000.0;
   double slowdown = opsPerSec / opsPerRealSec;
   std::cout << std::endl;
@@ -172,7 +181,7 @@ void SystemState::dump(double elapsedTime) {
     << std::setprecision(3) << opsPerRealSec
     << " (" << std::setprecision(2) << gOpsPerRealSec << " GIPS)" << std::endl;
   std::cout << "Slowdown:                     "
-    << std::setprecision(2) << slowdown << "x" << std::endl;
+    << std::setprecision(2) << slowdown << "x" << std::endl;*/
 }
 
 int SystemState::run()
@@ -191,6 +200,14 @@ int SystemState::run()
       }
     }
   } catch (ExitException &ee) {
+    // System statistics
+    if (stats) {
+      dump();
+    }
+    // Instruction statistics
+    if (Stats::get().getStatsEnabled()) {
+      Stats::get().dump();
+    }
     return ee.getStatus();
   }
   Tracer::get().noRunnableThreads(*this);

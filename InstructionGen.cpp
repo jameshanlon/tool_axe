@@ -1120,6 +1120,13 @@ emitTrace(Instruction &instruction)
   std::cout << "}\n";
 }
 
+static void emitStats(Instruction &instruction) {
+  const std::string &name = instruction.getName();
+  std::cout << "if (Stats::get().getStatsEnabled()) {\n";
+  std::cout << "  STATS(\"" << name << "\");\n";
+  std::cout << "}\n";
+}
+
 static std::string getInstFunctionName(Instruction &inst)
 {
   return "Instruction_" + inst.getName();
@@ -1190,6 +1197,7 @@ static void emitInstFunction(Instruction &inst, bool jit)
     }
     if (!jit)
       emitTrace(inst);
+    emitStats(inst);
     emitter.emit(inst.getCode());
     std::cout << '\n';
     // Write operands.

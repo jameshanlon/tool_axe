@@ -22,6 +22,7 @@
 #include <ctime>
 
 #include "Trace.h"
+#include "Stats.h"
 #include "Resource.h"
 #include "Core.h"
 #include "SyscallHandler.h"
@@ -56,7 +57,8 @@ static void printUsage(const char *ProgName) {
 "  --config FILE               Specify a configuration file.\n"
 "  -t                          Enable instruction tracing.\n"
 "  -s                          Simulate a sire program.\n"
-"  -d                          Dump execution statictics.\n"
+"  --system-stats              Dump system statictics.\n"
+"  --inst-stats                Dump instruction statictics.\n"
 "  --loopback PORT1 PORT2      Connect PORT1 to PORT2.\n"
 "  --vcd FILE                  Write VCD trace to FILE.\n"
 "\n"
@@ -592,7 +594,7 @@ int
 loop(const Config &cfg, const char *filename, const LoopbackPorts &loopbackPorts,
      const std::string &vcdFile,
      const PeripheralDescriptorWithPropertiesVector &peripherals,
-     bool sire, bool stats)
+     bool sire, bool systemStats, bool instStats)
 {
   std::auto_ptr<SymbolInfo> SI(new SymbolInfo);
   std::set<Core*> coresWithImage;
@@ -603,6 +605,15 @@ loop(const Config &cfg, const char *filename, const LoopbackPorts &loopbackPorts
   else
     statePtr = readXE(cfg, filename, *SI, coresWithImage, entryPoints);
   SystemState &sys = *statePtr;
+
+  if (systemStats) {
+    sys.enableStats();
+  }
+  
+  if (instStats) {
+    Stats::get().initStats(sys.numCores());
+    Stats::get().setStatsEnabled(true);
+  }
 
   if (!connectLoopbackPorts(sys, loopbackPorts)) {
     std::exit(1);
@@ -772,7 +783,8 @@ main(int argc, char **argv) {
   const char *file = 0;
   bool tracing = false;
   bool sire = false;
-  bool stats = false;
+  bool instStats = false;
+  bool systemStats = false;
   Config cfg;
   LoopbackPorts loopbackPorts;
   std::string vcdFile;
@@ -784,8 +796,10 @@ main(int argc, char **argv) {
       tracing = true;
     } else if (arg == "-s") {
       sire = true;
-    } else if (arg == "-d") {
-      stats = true;
+    } else if (arg == "--inst-stats") {
+      instStats = true;
+    } else if (arg == "--system-stats") {
+      systemStats = true;
     } else if (arg == "--config") {
       if (i + 1 > argc) {
         printUsage(argv[0]);
@@ -837,5 +851,6 @@ main(int argc, char **argv) {
   if (tracing) {
     Tracer::get().setTracingEnabled(tracing);
   }
-  return loop(cfg, file, loopbackPorts, vcdFile, peripherals, sire, stats);
+  return loop(cfg, file, loopbackPorts, vcdFile, peripherals, 
+      sire, systemStats, instStats);
 }

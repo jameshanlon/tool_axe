@@ -16,6 +16,8 @@
 #include "SyscallHandler.h"
 #include <cstdio>
 
+#include "Stats.h"
+
 /// Use to get the required LLVM type for instruction functions.
 extern "C" JITReturn jitInstructionTemplate(Thread &t) {
   return JIT_RETURN_CONTINUE;
@@ -86,6 +88,10 @@ extern "C" JITReturn jitInterpretOne(Thread &t) {
 #define ERROR() std::abort();
 #define OP(n) (field ## n)
 #define LOP(n) OP(n)
+#define STATS(...) \
+  do { \
+      Stats::get().updateStats(THREAD, __VA_ARGS__); \
+  } while(0)
 #define EMIT_JIT_INSTRUCTION_FUNCTIONS
 #include "InstructionGenOutput.inc"
 #undef EMIT_JIT_INSTRUCTION_FUNCTIONS
