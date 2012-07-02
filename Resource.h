@@ -99,8 +99,10 @@ public:
 
   unsigned width() const
   {
-    assert((type() == RES_TYPE_PORT) && "width is only valid for ports");
-    return (id >> RES_PORT_WIDTH_SHIFT) & RES_PORT_WIDTH_MASK;
+    // TODO fix with ecmps.x
+    //assert((type() == RES_TYPE_PORT) && "width is only valid for ports");
+    //return (id >> RES_PORT_WIDTH_SHIFT) & RES_PORT_WIDTH_MASK;
+    return 1;
   }
   
   operator uint32_t() const { return id; }

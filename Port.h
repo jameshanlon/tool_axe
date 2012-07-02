@@ -9,7 +9,6 @@
 #include "Resource.h"
 #include "ClockBlock.h"
 #include "BitManip.h"
-#include "PortInterface.h"
 #include <stdint.h>
 #include <set>
 
@@ -17,7 +16,7 @@ class Thread;
 class ClockBlock;
 struct Signal;
 
-class Port : public EventableResource, public PortInterface {
+class Port : public EventableResource {
 public:
   enum ReadyMode {
     NOREADY,
@@ -43,8 +42,6 @@ private:
   uint16_t portCounter;
   // Current value on the pins.
   uint32_t shiftRegister;
-  PortInterface *loopback;
-  PortInterface *tracer;
   /// Ready out ports.
   std::set<Port*> readyOutPorts;
   /// Thread paused on an output instruction.
@@ -94,6 +91,9 @@ private:
   MasterSlave masterSlave;
   PortType portType;
   Signal pinsInputValue;
+  /// For port output
+  FILE *file;
+  bool fileOpen;
 
   /// Return the value currently being output to the ports pins.
   Signal getPinsOutputValue() const;
@@ -173,9 +173,6 @@ public:
   uint32_t getTimestamp(Thread &thread, ticks_t time);
   void clearPortTime(Thread &thread, ticks_t time);
 
-  void setLoopback(PortInterface *p) { loopback = p; }
-  void setTracer(PortInterface *p) { tracer = p; }
-  
   unsigned getPortWidth() const
   {
     return getID().width();

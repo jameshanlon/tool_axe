@@ -54,6 +54,14 @@ const Port *Core::getPortByID(ResourceID ID) const
   unsigned num = ID.num();
   if (num > portNum[width])
     return 0;
+  //std::cout<<"getPortByID ID="<<ID<<", width="<<width<<", num="<<num<<std::endl;
+  if (ID < 256) {
+    //std::cout<<"port "<<std::hex<<ID<<" to 0"<<std::endl;
+    return &port[width][0];
+  } else {
+    //std::cout<<"port "<<std::hex<<ID<<" to 1"<<std::endl;
+    return &port[width][1];
+  }
   return &port[width][num];
 }
 

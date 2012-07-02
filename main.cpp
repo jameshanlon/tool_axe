@@ -31,12 +31,6 @@
 #include "Instruction.h"
 #include "Node.h"
 #include "SystemState.h"
-#include "WaveformTracer.h"
-#include "PeripheralRegistry.h"
-#include "registerAllPeripherals.h"
-#include "UartRx.h"
-#include "Property.h"
-#include "PortArg.h"
 
 #define XCORE_ELF_MACHINE 0xB49E
 
@@ -49,26 +43,8 @@ static void printUsage(const char *ProgName) {
   std::cout <<
 "General Options:\n"
 "  -help                       Display this information.\n"
-"  --loopback PORT1 PORT2      Connect PORT1 to PORT2.\n"
-"  --vcd FILE                  Write VCD trace to FILE.\n"
 "  -t                          Enable instruction tracing.\n"
-"\n"
-"Peripherals:\n";
-  for (PeripheralRegistry::iterator it = PeripheralRegistry::begin(),
-       e = PeripheralRegistry::end(); it != e; ++it) {
-    PeripheralDescriptor *periph = *it;
-    std::cout << "  --" << periph->getName() << ' ';
-    bool needComma = false;
-    for (PeripheralDescriptor::iterator propIt = periph->properties_begin(),
-         propE = periph->properties_end(); propIt != propE; ++propIt) {
-      const PropertyDescriptor &prop = *propIt;
-      if (needComma)
-        std::cout << ',';
-      std::cout << prop.getName() << '=';
-      needComma = true;
-    }
-    std::cout << '\n';
-  }
+"\n";
 }
 
 static void readSymbols(Elf *e, Elf_Scn *scn, const GElf_Shdr &shdr,
@@ -185,6 +161,7 @@ static void readElf(const char *filename, const XEElfSector *elfSector,
   }
   uint32_t ram_base = core.ram_base;
   uint32_t ram_size = core.ram_size;
+  //std::cout<<"Ram base "<<std::hex<<ram_base<<", ram size "<<ram_size<<std::dec<<std::endl;
   for (unsigned i = 0; i < num_phdrs; i++) {
     GElf_Phdr phdr;
     if (gelf_getphdr(e, i, &phdr) == NULL) {
@@ -194,6 +171,7 @@ static void readElf(const char *filename, const XEElfSector *elfSector,
     if (phdr.p_filesz == 0) {
       continue;
     }
+    //std::cout<<std::hex<<"p_paddr "<<phdr.p_paddr<<" p_memsz "<<phdr.p_memsz<<std::dec<<std::endl;
     if (phdr.p_offset > ElfSize) {
     	std::cerr << "Invalid offet in ELF program header" << i << std::endl;
     	std::exit(1);
@@ -239,56 +217,6 @@ enum {
   SETC_PORT_CLOCKPORT = 0x500f,
   SETC_PORT_READYPORT = 0x5017
 };
-
-typedef std::vector<std::pair<PortArg, PortArg> > LoopbackPorts;
-
-static bool
-connectLoopbackPorts(SystemState &state, const LoopbackPorts &ports)
-{
-  for (LoopbackPorts::const_iterator it = ports.begin(), e = ports.end();
-       it != e; ++it) {
-    Port *first = it->first.lookup(state);
-    if (!first) {
-      std::cerr << "Error: Invalid port ";
-      it->first.dump(std::cerr);
-      std::cerr << '\n';
-      return false;
-    }
-    Port *second = it->second.lookup(state);
-    if (!second) {
-      std::cerr << "Error: Invalid port ";
-      it->second.dump(std::cerr);
-      std::cerr << '\n';
-      return false;
-    }
-    first->setLoopback(second);
-    second->setLoopback(first);
-  }
-  return true;
-}
-
-static void connectWaveformTracer(Core &core, WaveformTracer &waveformTracer)
-{
-  for (Core::port_iterator it = core.port_begin(), e = core.port_end();
-       it != e; ++it) {
-    waveformTracer.add(core.getCoreName(), *it);
-  }
-  waveformTracer.finalizePorts();
-}
-
-static void
-connectWaveformTracer(SystemState &system, WaveformTracer &waveformTracer)
-{
-  for (SystemState::node_iterator outerIt = system.node_begin(),
-       outerE = system.node_end(); outerIt != outerE; ++outerIt) {
-    Node &node = **outerIt;
-    for (Node::core_iterator innerIt = node.core_begin(),
-         innerE = node.core_end(); innerIt != innerE; ++innerIt) {
-      Core &core = **innerIt;
-      connectWaveformTracer(core, waveformTracer);
-    }
-  }
-}
 
 static long readNumberAttribute(xmlNode *node, const char *name)
 {
@@ -482,37 +410,13 @@ readXE(const char *filename, SymbolInfo &SI,
   return system;
 }
 
-typedef std::vector<std::pair<PeripheralDescriptor*, Properties> >
-  PeripheralDescriptorWithPropertiesVector;
-
-int
-loop(const char *filename, const LoopbackPorts &loopbackPorts,
-     const std::string &vcdFile,
-     const PeripheralDescriptorWithPropertiesVector &peripherals,
-     bool tracing)
-{
+int loop(const char *filename, bool tracing) {
   std::auto_ptr<SymbolInfo> SI(new SymbolInfo);
   std::set<Core*> coresWithImage;
   std::map<Core*,uint32_t> entryPoints;
-  std::auto_ptr<SystemState> statePtr = readXE(filename, *SI, coresWithImage,
-                                               entryPoints);
+  std::auto_ptr<SystemState> statePtr = 
+      readXE(filename, *SI, coresWithImage, entryPoints);
   SystemState &sys = *statePtr;
-
-  if (!connectLoopbackPorts(sys, loopbackPorts)) {
-    std::exit(1);
-  }
-
-  for (PeripheralDescriptorWithPropertiesVector::const_iterator it = peripherals.begin(),
-       e = peripherals.end(); it != e; ++it) {
-    it->first->createInstance(sys, it->second);
-  }
-
-  std::auto_ptr<WaveformTracer> waveformTracer;
-  // TODO update to handle multiple cores.
-  if (!vcdFile.empty()) {
-    waveformTracer.reset(new WaveformTracer(vcdFile));
-    connectWaveformTracer(sys, *waveformTracer);
-  }
 
   for (std::set<Core*>::iterator it = coresWithImage.begin(),
        e = coresWithImage.end(); it != e; ++it) {
@@ -554,151 +458,22 @@ loop(const char *filename, const LoopbackPorts &loopbackPorts,
   return sys.run();
 }
 
-static void loopbackOption(const char *a, const char *b, LoopbackPorts &loopbackPorts)
-{
-  PortArg firstArg;
-  if (!PortArg::parse(a, firstArg)) {
-    std::cerr << "Error: Invalid port " << a << '\n';
-    exit(1);
-  }
-  PortArg secondArg;
-  if (!PortArg::parse(b, secondArg)) {
-    std::cerr << "Error: Invalid port " << b << '\n';
-    exit(1);
-  }
-  loopbackPorts.push_back(std::make_pair(firstArg, secondArg));
-}
-
-static Property
-parseIntegerProperty(const PropertyDescriptor *prop, const std::string &s)
-{
-  char *endp;
-  long value = std::strtol(s.c_str(), &endp, 0);
-  if (*endp != '\0') {
-    std::cerr << "Error: property " << prop->getName();
-    std::cerr << " requires an integer argument\n";
-    std::exit(1);
-  }
-  return Property::integerProperty(prop, value);
-}
-
-static Property
-parsePortProperty(const PropertyDescriptor *prop, const std::string &s)
-{
-  PortArg portArg;
-  if (!PortArg::parse(s, portArg)) {
-    std::cerr << "Error: property " << prop->getName();
-    std::cerr << " requires an port argument\n";
-    std::exit(1);
-  }
-  return Property::portProperty(prop, portArg);
-}
-
-static void
-parseProperties(const std::string &str, const PeripheralDescriptor *periph,
-                Properties &properties)
-{
-  //port=PORT_1A,bitrate=28800
-  const char *s = str.c_str();
-  while (*s != '\0') {
-    const char *p = std::strpbrk(s, "=,");
-    std::string name;
-    std::string value;
-    if (!p) {
-      name = std::string(s);
-      s += name.length();
-    } else {
-      name = std::string(s, p - s);
-      s = p + 1;
-      if (*p == '=') {
-        p = strchr(s, ',');
-        if (p) {
-          value = std::string(s, p - s);
-          s += value.length() + 1;
-        } else {
-          value = std::string(s);
-          s += value.length();
-        }
-      }
-    }
-    if (const PropertyDescriptor *prop = periph->getProperty(name)) {
-      switch (prop->getType()) {
-      default:
-        assert(0 && "Unexpected property type");
-      case PropertyDescriptor::INTEGER:
-        properties.set(parseIntegerProperty(prop, value));
-        break;
-      case PropertyDescriptor::STRING:
-        properties.set(Property::stringProperty(prop, value));
-        break;
-      case PropertyDescriptor::PORT:
-        properties.set(parsePortProperty(prop, value));
-        break;
-      }
-    } else {
-      std::cerr << "Error: Unknown property \"" << name << "\"";
-      std::cerr << " for " << periph->getName() << std::endl;
-      std::exit(1);
-    }
-  }
-  // Check required properties have been set.
-  for (PeripheralDescriptor::const_iterator it = periph->properties_begin(),
-       e = periph->properties_end(); it != e; ++it) {
-    if (it->getRequired() && !properties.get(it->getName())) {
-      std::cerr << "Error: Required property \"" << it->getName() << "\"";
-      std::cerr << " for " << periph->getName();
-      std::cerr << " is not set " << std::endl;
-      std::exit(1);
-    }
-  }
-}
-
-static PeripheralDescriptor *parsePeripheralOption(const std::string arg)
-{
-  if (arg.substr(0, 2) != "--")
-    return 0;
-  return PeripheralRegistry::get(arg.substr(2));
-}
-
 int
 main(int argc, char **argv) {
-  registerAllPeripherals();
   if (argc < 2) {
     printUsage(argv[0]);
     return 1;
   }
   const char *file = 0;
   bool tracing = false;
-  LoopbackPorts loopbackPorts;
-  std::string vcdFile;
   std::string arg;
-  std::vector<std::pair<PeripheralDescriptor*, Properties> > peripherals;
   for (int i = 1; i < argc; i++) {
     arg = argv[i];
     if (arg == "-t") {
       tracing = true;
-    } else if (arg == "--vcd") {
-      if (i + 1 > argc) {
-        printUsage(argv[0]);
-        return 1;
-      }
-      vcdFile = argv[i + 1];
-      i++;
-    } else if (arg == "--loopback") {
-      if (i + 2 >= argc) {
-        printUsage(argv[0]);
-        return 1;
-      }
-      loopbackOption(argv[i + 1], argv[i + 2], loopbackPorts);
-      i += 2;
     } else if (arg == "--help") {
       printUsage(argv[0]);
       return 0;
-    } else if (PeripheralDescriptor *pd = parsePeripheralOption(arg)) {
-      peripherals.push_back(std::make_pair(pd, Properties()));
-      if (i + 1 < argc && argv[i + 1][0] != '-') {
-        parseProperties(argv[++i], pd, peripherals.back().second);
-      }
     } else {
       if (file) {
         printUsage(argv[0]);
@@ -716,5 +491,5 @@ main(int argc, char **argv) {
     Tracer::get().setColour(true);
   }
 #endif
-  return loop(file, loopbackPorts, vcdFile, peripherals, tracing);
+  return loop(file, tracing);
 }

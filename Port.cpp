@@ -5,27 +5,23 @@
 
 #include "Resource.h"
 #include "Core.h"
-#include "PortNames.h"
 #include <algorithm>
+#include <stdio.h>
 
 Port::Port() :
   EventableResource(RES_TYPE_PORT),
   clock(0),
   readyOutOf(0),
-  loopback(0),
-  tracer(0),
   pausedOut(0),
   pausedIn(0),
   pausedSync(0),
   readyOut(false),
   time(0),
-  pinsInputValue() {}
+  pinsInputValue(),
+  fileOpen(false) {}
 
 std::string Port::getName() const
 {
-  std::string name;
-  if (getPortName(getID(), name))
-    return name;
   return "(Unknown port)";
 }
 
@@ -126,8 +122,6 @@ Signal Port::getPinsOutputValue() const
 void Port::
 outputValue(Signal value, ticks_t time)
 {
-  if (loopback)
-    loopback->seePinsChange(value, time);
   if (outputPort)
     handlePinsChange(value, time);
 }
@@ -143,8 +137,6 @@ handlePinsChange(Signal value, ticks_t time)
        e = readyInOf.end(); it != e; ++it) {
     (*it)->setReadyInValue(value, time);
   }
-  if (tracer)
-    tracer->seePinsChange(value, time);
 }
 
 void Port::
@@ -469,7 +461,7 @@ in(Thread &thread, ticks_t threadTime, uint32_t &value)
     value = 0;
     return CONTINUE;
   }
-  if (outputPort) {
+  /*if (outputPort) {
     pausedIn = &thread;
     scheduleUpdateIfNeeded();
     return DESCHEDULE;
@@ -488,9 +480,23 @@ in(Thread &thread, ticks_t threadTime, uint32_t &value)
     holdTransferReg = false;
     return CONTINUE;
   }
+  return DESCHEDULE;*/
+  int num = getID().num();
+  if (num == 0) {
+    value = getchar();
+  }
+  else {
+    if (!fileOpen) {
+      char fname[] = {'a', 'x', 'e', ' ', 0};
+      fname[3] = num + '0';
+      file = fopen(fname, "wb");
+      fileOpen = true;
+    }
+    value = fgetc(file);
+  }
   pausedIn = &thread;
   scheduleUpdateIfNeeded();
-  return DESCHEDULE;
+  return CONTINUE;
 }
 
 Resource::ResOpResult Port::
@@ -541,7 +547,7 @@ out(Thread &thread, uint32_t value, ticks_t threadTime)
   if (portType != DATAPORT) {
     return CONTINUE;
   }
-  if (outputPort) {
+  /*if (outputPort) {
     if (transferRegValid) {
       pausedOut = &thread;
       scheduleUpdateIfNeeded();
@@ -550,7 +556,21 @@ out(Thread &thread, uint32_t value, ticks_t threadTime)
   } else {
     // TODO probably wrong.
     validShiftRegEntries = 1;
+  }*/
+  int num = getID().num();
+  //std::cout<<"port"<<std::hex<<(getID()>>8)<<std::endl;
+  if (num == 0) {
+    putchar(value); 
   }
+  else {
+    if (!fileOpen) {
+      char fname[] = {'a', 'x', 'e', ' ', 0};
+      fname[3] = num + '0';
+      file = fopen(fname, "wb");
+      fileOpen = true;
+    }
+    fputc(value, file);
+  } 
   transferRegValid = true;
   transferReg = value;
   outputPort = true;
@@ -820,7 +840,7 @@ void Port::scheduleUpdateIfNeededOutputPort()
     return scheduleUpdate((nextEdge + 1)->time);
   }
   bool readyInKnownZero = useReadyIn() && clock->getReadyInValue() == Signal(0);
-  bool updateOnPinsChange = !sourceOf.empty() || loopback;
+  bool updateOnPinsChange = !sourceOf.empty();
   if (!readyInKnownZero) {
     if (updateOnPinsChange && nextShiftRegOutputPort(shiftReg) != shiftReg)
       return scheduleUpdate((nextEdge + 1)->time);
@@ -878,7 +898,7 @@ void Port::scheduleUpdateIfNeeded()
   const bool slowMode = false;
   if (slowMode) {
     if (pausedIn || eventsPermitted() || pausedOut || pausedSync ||
-        !sourceOf.empty() || useReadyOut() || loopback) {
+        !sourceOf.empty() || useReadyOut()) {
       return scheduleUpdate(nextEdge->time);
     }
   }

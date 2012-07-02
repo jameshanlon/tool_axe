@@ -56,15 +56,8 @@ add_executable(axe
   Synchroniser.h
   Timer.cpp
   Timer.h
-  PortInterface.h
-  PortSplitter.h
-  PortSplitter.cpp
   Port.h
   Port.cpp
-  PortArg.h
-  PortArg.cpp
-  PortNames.h
-  PortNames.cpp
   Trace.h
   Trace.cpp
   BitManip.h
@@ -82,20 +75,6 @@ add_executable(axe
   Token.h
   SSwitch.h
   SSwitch.cpp
-  WaveformTracer.h
-  WaveformTracer.cpp
-  UartRx.h
-  UartRx.cpp
-  PeripheralRegistry.h
-  PeripheralRegistry.cpp
-  registerAllPeripherals.h
-  registerAllPeripherals.cpp
-  Peripheral.h
-  Peripheral.cpp
-  PeripheralDescriptor.h
-  PeripheralDescriptor.cpp
-  Property.h
-  Property.cpp
   AccessSecondIterator.h
   ConfigSchema.rng
   ${AXE_BINARY_DIR}/InstructionGenOutput.inc
