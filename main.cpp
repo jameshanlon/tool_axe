@@ -21,16 +21,19 @@
 #include <map>
 
 #include "Trace.h"
+#include "Stats.h"
 #include "Resource.h"
 #include "Core.h"
 #include "SyscallHandler.h"
 #include "SymbolInfo.h"
 #include "XE.h"
+#include "SE.h"
 #include "ScopedArray.h"
 #include "Config.h"
 #include "Instruction.h"
 #include "Node.h"
 #include "SystemState.h"
+#include "LatencyModel.h"
 
 #define XCORE_ELF_MACHINE 0xB49E
 
@@ -42,8 +45,13 @@ static void printUsage(const char *ProgName) {
   std::cout << "Usage: " << ProgName << " [options] filename\n";
   std::cout <<
 "General Options:\n"
-"  -help                       Display this information.\n"
-"  -t                          Enable instruction tracing.\n"
+"  -h Display this information.\n"
+"  -c Specify a configuration file.\n"
+"  -C Specify a configuration file and display values.\n"
+"  -t Enable instruction tracing.\n"
+"  -s Simulate a sire program.\n"
+"  -S Display system statistics.\n"
+"  -I Display instruction statistics.\n"
 "\n";
 }
 
@@ -410,12 +418,96 @@ readXE(const char *filename, SymbolInfo &SI,
   return system;
 }
 
-int loop(const char *filename, bool tracing) {
+static inline std::auto_ptr<SystemState>
+createSESystem(const char *filename, int numCores)
+{
+  std::auto_ptr<SystemState> systemState(new SystemState());
+  std::map<long, Node*> nodeNumberMap;
+
+  // Create a single parent node
+  std::auto_ptr<Node> node(new Node(Node::XS1_L));
+  unsigned jtagIndex = 0;
+  node->setJtagIndex(jtagIndex);
+  nodeNumberMap.insert(std::make_pair(jtagIndex, node.get()));
+
+  // Create child cores
+  for (int i=0; i<numCores; i++) {
+    std::auto_ptr<Core> core(new Core(RAM_SIZE, RAM_BASE));
+    core->setCoreNumber(i);
+    node->addCore(core);
+    //std::cout<<"Created core "<<i<<"\n";
+  }
+
+  node->setNodeID(jtagIndex);
+  systemState->addNode(node);
+  return systemState;
+}
+
+static inline std::auto_ptr<SystemState>
+readSE(const char *filename, SymbolInfo &SI,
+       std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints)
+{
+  //std::cout << "Reading " << filename << std::endl;
+  
+  // Load the file into memory.
+  SE se(filename);
+  if (!se) {
+    std::cerr << "Error opening \"" << filename << "\"" << std::endl;
+    std::exit(1);
+  }
+  se.read();
+
+  // Create the system
+  std::auto_ptr<SystemState> system = createSESystem(filename, se.getNumCores());
+  std::map<std::pair<unsigned, unsigned>, Core*> coreMap;
+  addToCoreMap(coreMap, *system);
+
+  // Pick out the master and slave Elf sectors
+  const XEElfSector *masterElfSector = NULL;
+  const XEElfSector *slaveElfSector = NULL;
+  for (std::vector<const XESector *>::const_reverse_iterator
+       it = se.getSectors().rbegin(), end = se.getSectors().rend(); it != end;
+       ++it) {
+    switch((*it)->getType()) {
+    case XESector::XE_SECTOR_ELF:
+      {
+        const XEElfSector *elfSector = static_cast<const XEElfSector*>(*it);
+        unsigned coreNum = elfSector->getCore();
+        if (coreNum == 0)
+          masterElfSector = static_cast<const XEElfSector*>(*it);
+        else if (coreNum == 1) 
+          slaveElfSector = static_cast<const XEElfSector*>(*it);
+      }
+    }
+  }
+
+  // Load the master and slave Elf images
+  for(int i=0; i<se.getNumCores(); i++) {
+    unsigned jtagIndex = 0;
+    Core *core = coreMap[std::make_pair(jtagIndex, i)];
+    if (!core) {
+      std::cerr << "Error: cannot find core " << i << std::endl;
+      std::exit(1);
+    }
+    std::auto_ptr<CoreSymbolInfo> CSI;
+    readElf(filename, i==0 ? masterElfSector : slaveElfSector, *core, CSI, entryPoints);
+    SI.add(core, CSI);
+    coresWithImage.insert(core);
+    //std::cout<<"Loaded core "<<core->getCoreID()<<"\n";
+  }
+
+  se.close();
+  return system;
+}
+
+int loop(const char *filename, bool tracing, bool se, 
+    bool systemStats, bool instStats) {
   std::auto_ptr<SymbolInfo> SI(new SymbolInfo);
   std::set<Core*> coresWithImage;
   std::map<Core*,uint32_t> entryPoints;
-  std::auto_ptr<SystemState> statePtr = 
-      readXE(filename, *SI, coresWithImage, entryPoints);
+  std::auto_ptr<SystemState> statePtr = se ?
+    readSE(filename, *SI, coresWithImage, entryPoints) :
+    readXE(filename, *SI, coresWithImage, entryPoints);
   SystemState &sys = *statePtr;
 
   for (std::set<Core*>::iterator it = coresWithImage.begin(),
@@ -449,13 +541,28 @@ int loop(const char *filename, bool tracing) {
     }
   }
   SyscallHandler::setCoreCount(coresWithImage.size());
-  
+  LatencyModel::get().init(coresWithImage.size());
+ 
+  // Inisialise instruction statistics
+  if (instStats)
+    Stats::get().initStats(coresWithImage.size());
+ 
   // Initialise tracing
   Tracer::get().setSymbolInfo(SI);
   if (tracing) {
     Tracer::get().setTracingEnabled(tracing);
   }
-  return sys.run();
+
+  // Run the simulation
+  int status = sys.run();
+
+  // Display statistics
+  if (systemStats)
+    sys.stats();
+  if (instStats)
+    Stats::get().dump();
+
+  return status;
 }
 
 int
@@ -466,11 +573,37 @@ main(int argc, char **argv) {
   }
   const char *file = 0;
   bool tracing = false;
+  bool sire = false;
+  bool systemStats = false;
+  bool instStats = false;
   std::string arg;
   for (int i = 1; i < argc; i++) {
     arg = argv[i];
     if (arg == "-t") {
       tracing = true;
+    } else if (arg == "-s") {
+      sire = true;
+    } else if (arg == "-c") {
+      if (i + 1 > argc) {
+        printUsage(argv[0]);
+        return 1;
+      }
+      if(!Config::get().read(argv[i + 1])) 
+        return 1;
+      i++;
+    } else if (arg == "-C") {
+      if (i + 1 > argc) {
+        printUsage(argv[0]);
+        return 1;
+      }
+      if(!Config::get().read(argv[i + 1])) 
+        return 1;
+      Config::get().display();
+      i++;
+    } else if (arg == "-S") {
+      systemStats = true;
+    } else if (arg == "-I") {
+      instStats = true;
     } else if (arg == "--help") {
       printUsage(argv[0]);
       return 0;
@@ -491,5 +624,5 @@ main(int argc, char **argv) {
     Tracer::get().setColour(true);
   }
 #endif
-  return loop(file, tracing);
+  return loop(file, tracing, sire, systemStats, instStats);
 }

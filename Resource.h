@@ -303,10 +303,8 @@ protected:
 
   void scheduleUpdate(ticks_t time);
 public:
-  Thread &getOwner()
-  {
-    return *owner;
-  }
+  bool hasOwner() { return owner != 0; }
+  Thread &getOwner() { return *owner; }
   virtual void completeEvent();
 
   void setVector(Thread &thread, uint32_t v);

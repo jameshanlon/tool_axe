@@ -6,10 +6,12 @@
 #ifndef _Chanend_h_
 #define _Chanend_h_
 
+#include <memory>
 #include "Resource.h"
 #include "ChanEndpoint.h"
 #include "ring_buffer.h"
 #include "Token.h"
+#include "LatencyModel.h"
 
 class Chanend : public EventableResource, public ChanEndpoint {
 private:
@@ -28,6 +30,21 @@ private:
   bool inPacket;
   /// Should be current packet be junked?
   bool junkPacket;
+
+  /// Memory access packets
+  enum memAccess_t { WRITE4, READ4 };
+  bool        memAccessPacket;
+  uint8_t     memAccessStep;
+  memAccess_t memAccessType;
+  uint32_t    memAddress;
+  uint32_t    memValue;
+  void illegalMemAccessPacket();
+  void illegalMemAddress();
+
+  /// Latency model
+  LatencyModel *latencyModel;
+  ticks_t lastTime, lastLatency;
+  ticks_t getLatency(Chanend *dest, int numTokens, bool routeOpen, ticks_t time);
 
   /// Update the channel end after the data is placed in the buffer.
   void update(ticks_t time);
@@ -71,8 +88,10 @@ private:
 
   void setPausedIn(Thread &t, bool wordInput);
 
+  void debug();
+
 public:
-  Chanend() : EventableResource(RES_TYPE_CHANEND) {}
+  Chanend() : EventableResource(RES_TYPE_CHANEND), lastTime(0), lastLatency(0) {}
 
   bool alloc(Thread &t)
   {
@@ -82,6 +101,7 @@ public:
     pausedIn = 0;
     inPacket = false;
     junkPacket = false;
+    memAccessPacket = false;
     eventableSetInUseOn(t);
     setJunkIncoming(false);
     return true;
@@ -98,6 +118,7 @@ public:
   }
 
   bool setData(Thread &thread, uint32_t value, ticks_t time);
+  void setLatencyModel(LatencyModel *p);
 
   ResOpResult outt(Thread &thread, uint8_t value, ticks_t time);
   ResOpResult outct(Thread &thread, uint8_t value, ticks_t time);

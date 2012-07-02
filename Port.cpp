@@ -480,6 +480,8 @@ in(Thread &thread, ticks_t threadTime, uint32_t &value)
     holdTransferReg = false;
     return CONTINUE;
   }
+  pausedIn = &thread;
+  scheduleUpdateIfNeeded();
   return DESCHEDULE;*/
   int num = getID().num();
   if (num == 0) {
@@ -494,8 +496,6 @@ in(Thread &thread, ticks_t threadTime, uint32_t &value)
     }
     value = fgetc(file);
   }
-  pausedIn = &thread;
-  scheduleUpdateIfNeeded();
   return CONTINUE;
 }
 
@@ -556,7 +556,11 @@ out(Thread &thread, uint32_t value, ticks_t threadTime)
   } else {
     // TODO probably wrong.
     validShiftRegEntries = 1;
-  }*/
+  }
+  transferRegValid = true;
+  transferReg = value;
+  outputPort = true;
+  scheduleUpdateIfNeeded();*/
   int num = getID().num();
   //std::cout<<"port"<<std::hex<<(getID()>>8)<<std::endl;
   if (num == 0) {
@@ -571,10 +575,6 @@ out(Thread &thread, uint32_t value, ticks_t threadTime)
     }
     fputc(value, file);
   } 
-  transferRegValid = true;
-  transferReg = value;
-  outputPort = true;
-  scheduleUpdateIfNeeded();
   return CONTINUE;
 }
 

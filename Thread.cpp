@@ -8,9 +8,11 @@
 #include "Node.h"
 #include "SystemState.h"
 #include "Trace.h"
+#include "Stats.h"
 #include "Exceptions.h"
 #include "BitManip.h"
 #include "SyscallHandler.h"
+#include "Config.h"
 #include <iostream>
 #include <climits>
 
@@ -522,6 +524,8 @@ threadSetReady(ResourceID resID, uint32_t val, ticks_t time)
 #define END_DISPATCH_LOOP } }
 #endif
 
+#define THREAD (*this)
+#define CORE THREAD.getParent()
 #define LOAD_WORD(addr) core->loadWord(addr)
 #define LOAD_SHORT(addr) core->loadShort(addr)
 #define LOAD_BYTE(addr) core->loadByte(addr)
@@ -560,6 +564,8 @@ do { \
 #define IMM(Num) (Num)
 #define PC pc
 #define TIME this->time
+#define COUNT this->count
+#define MEMORY_ACCESS_CYCLES Config::get().latencyMemory
 #define TO_PC(addr) (core->physicalAddress(addr) >> 1)
 #define FROM_PC(addr) core->virtualAddress((addr) << 1)
 #define CHECK_PC(addr) ((addr) < (core->ram_size << 1))
@@ -637,8 +643,10 @@ do { \
   sys.schedule(*this); \
   return; \
 } while(0)
-
-#define INSTRUCTION_CYCLES 4
+#define STATS(...) \
+do { \
+    Stats::get().updateStats(THREAD, __VA_ARGS__); \
+} while(0)
 
 void Thread::run(ticks_t time)
 {

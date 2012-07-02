@@ -7,6 +7,7 @@
 #define _Config_h_
 
 #include <stdint.h>
+#include <string>
 #include <boost/detail/endian.hpp>
 
 /// Number of threads per core.
@@ -48,8 +49,19 @@
 /// Size of the (input) buffer in a chanend.
 #define CHANEND_BUFFER_SIZE 8
 
+// Assume 10ns cycle (1Ghz clock)
+#define CYCLES_PER_SEC (1000*1000000)
+
 /// Number of processor cycles per 100MHz timer tick
 #define CYCLES_PER_TICK 4
+
+// Time to execute an instruction
+#define INSTRUCTION_CYCLES CYCLES_PER_TICK
+
+// Time to execute a divide instruction in 400MHz clock cycles. This is
+// approximate. The XCore divide unit divides 1 bit per cycle and is shared
+// between threads.
+#define DIV_CYCLES 32
 
 typedef uint64_t ticks_t;
 
@@ -71,5 +83,40 @@ typedef uint64_t ticks_t;
 #else
 #error "Unknown endianness"
 #endif
+
+class Config {
+public:
+  enum LatencyModelType {
+    NONE,
+    SP_2DMESH,
+    SP_2DTORUS,
+    SP_HYPERCUBE,
+    SP_CLOS,
+  };
+  static Config instance;
+  unsigned switchesPerChip;
+  unsigned tilesPerSwitch;
+  unsigned tilesPerChip;
+  unsigned latencyMemory;
+  unsigned latencyThread;
+  unsigned latencyToken;
+  unsigned latencyTileSwitch;
+  unsigned latencySwitch;
+  unsigned latencySwitchClosed;
+  unsigned latencySerialisation;
+  unsigned latencyLinkOnChip;
+  unsigned latencyLinkOffChip;
+  LatencyModelType latencyModelType;
+  
+  int read(const std::string &file);
+  void display();
+  static Config &get() { return instance; }
+
+private:
+  Config() {
+    latencyModelType = NONE;
+    latencyMemory = 0;
+  }
+};
 
 #endif // _Config_h_

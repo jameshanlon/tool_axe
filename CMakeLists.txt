@@ -39,6 +39,8 @@ add_executable(axe
   Exceptions.cpp
   XE.h
   XE.cpp
+  SE.h
+  SE.cpp
   SymbolInfo.h
   SymbolInfo.cpp
   Resource.h
@@ -60,8 +62,11 @@ add_executable(axe
   Port.cpp
   Trace.h
   Trace.cpp
+  Stats.h
+  Stats.cpp
   BitManip.h
   Config.h
+  Config.cpp
   ScopedArray.h
   ring_buffer.h
   Instruction.h
@@ -73,9 +78,13 @@ add_executable(axe
   SystemState.h
   SystemState.cpp
   Token.h
+  TokenDelay.h
+  TokenDelay.cpp
   SSwitch.h
   SSwitch.cpp
   AccessSecondIterator.h
+  LatencyModel.h
+  LatencyModel.cpp
   ConfigSchema.rng
   ${AXE_BINARY_DIR}/InstructionGenOutput.inc
   ${AXE_BINARY_DIR}/ConfigSchema.inc

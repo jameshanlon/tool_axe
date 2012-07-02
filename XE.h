@@ -64,11 +64,13 @@ public:
     s.close();
   }
 
+protected:
+  std::ifstream s;
+  bool error;
+
 private:
   uint16_t version;
-  std::ifstream s;
   std::vector<const XESector *>sectors;
-  bool error;
 
   uint8_t ReadU8();
   uint16_t ReadU16();
@@ -78,6 +80,7 @@ private:
 
   friend class XESector;
   friend class XEElfSector;
+  friend class SE;
 };
 
 #endif //_XE_h_

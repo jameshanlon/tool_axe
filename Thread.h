@@ -141,6 +141,8 @@ public:
   /// The time for the thread. This approximates the XCore's 400 MHz processor
   /// clock.
   ticks_t time;
+  // Instructions executed count
+  long count;
   sr_t sr;
   uint32_t illegal_pc;
   /// The resource on which the thread is paused on.
