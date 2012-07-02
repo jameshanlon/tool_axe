@@ -423,7 +423,7 @@ emitCount()
 static void emitStats(Instruction &instruction)
 {
   const std::string &name = instruction.getName();
-  std::cout << "if (Stats::get().getStatsEnabled()) {\n";
+  std::cout << "if (Stats::get().getEnabled()) {\n";
   std::cout << "  STATS(\"" << name << "\");\n";
   std::cout << "}\n";
 }

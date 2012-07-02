@@ -11,7 +11,7 @@
 
 class SE : public XE {
 public:
-  SE(const char *filename): XE(filename) {}
+  SE(const char *filename) : XE(filename) {};
   ~SE() {}
   void read();
   int getNumCores() {

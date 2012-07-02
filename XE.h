@@ -52,8 +52,11 @@ public:
 
 class XE {
 public:
-  XE(const char *filename);
+  XE(const char *filename) : 
+    s(filename, std::ifstream::in | std::ifstream::binary),
+    error(false) {}
   ~XE();
+  void read(); 
   const std::vector<const XESector *> &getSectors() { return sectors; }
   const XESector *getConfigSector() const;
   bool operator!() const {

@@ -29,14 +29,7 @@ bool XEElfSector::getElfData(char *buf) const
   return getParent().s.good();
 }
 
-XE::XE(const char *filename)
-  : s(filename, std::ifstream::in | std::ifstream::binary),
-    error(false)
-{
-  if (!s) {
-    error = true;
-    return;
-  }
+void XE::read() {
   char magic[4];
   s.read(magic, 4);
   if (std::memcmp(magic, "XMOS", 4) != 0) {

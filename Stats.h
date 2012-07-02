@@ -24,8 +24,8 @@ private:
   int cores;
   std::map<std::string, long long*> istats;
 public:
-  void setStatsEnabled(bool enable) { statsEnabled = enable; }
-  bool getStatsEnabled() const { return statsEnabled; }
+  void setEnabled(bool enable) { statsEnabled = enable; }
+  bool getEnabled() const { return statsEnabled; }
   void initStats(const int cores);
   void updateStats(const Thread &t, const char *name);
   void dump();

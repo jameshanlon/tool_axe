@@ -49,7 +49,7 @@ static void printUsage(const char *ProgName) {
 "  -c Specify a configuration file.\n"
 "  -C Specify a configuration file and display values.\n"
 "  -t Enable instruction tracing.\n"
-"  -s Simulate a sire program.\n"
+"  -s Simulate a se program.\n"
 "  -S Display system statistics.\n"
 "  -I Display instruction statistics.\n"
 "\n";
@@ -379,6 +379,7 @@ readXE(const char *filename, SymbolInfo &SI,
     std::cerr << "Error opening \"" << filename << "\"" << std::endl;
     std::exit(1);
   }
+  xe.read();
   // TODO handle XEs / XBs without a config sector.
   const XESector *configSector = xe.getConfigSector();
   if (!configSector) {
@@ -444,8 +445,8 @@ createSESystem(const char *filename, int numCores)
 }
 
 static inline std::auto_ptr<SystemState>
-readSE(const char *filename, SymbolInfo &SI,
-       std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints)
+readSE(const char *filename, SymbolInfo &SI, std::set<Core*> &coresWithImage, 
+    std::map<Core*,uint32_t> &entryPoints)
 {
   //std::cout << "Reading " << filename << std::endl;
   
@@ -544,8 +545,10 @@ int loop(const char *filename, bool tracing, bool se,
   LatencyModel::get().init(coresWithImage.size());
  
   // Inisialise instruction statistics
-  if (instStats)
+  if (instStats) {
     Stats::get().initStats(coresWithImage.size());
+    Stats::get().setEnabled(true);
+  }
  
   // Initialise tracing
   Tracer::get().setSymbolInfo(SI);
@@ -573,7 +576,7 @@ main(int argc, char **argv) {
   }
   const char *file = 0;
   bool tracing = false;
-  bool sire = false;
+  bool se = false;
   bool systemStats = false;
   bool instStats = false;
   std::string arg;
@@ -582,7 +585,7 @@ main(int argc, char **argv) {
     if (arg == "-t") {
       tracing = true;
     } else if (arg == "-s") {
-      sire = true;
+      se = true;
     } else if (arg == "-c") {
       if (i + 1 > argc) {
         printUsage(argv[0]);
@@ -624,5 +627,5 @@ main(int argc, char **argv) {
     Tracer::get().setColour(true);
   }
 #endif
-  return loop(file, tracing, sire, systemStats, instStats);
+  return loop(file, tracing, se, systemStats, instStats);
 }
