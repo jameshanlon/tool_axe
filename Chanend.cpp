@@ -167,6 +167,7 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
             time+Config::get().latencyMemory);
         // Update the time of this thread to account for these operations
         getOwner().time += Config::get().latencyMemory+CYCLES_PER_TICK;
+            time+Config::get().latencyMemory+CYCLES_PER_TICK);
         //debug(); std::cout<<"Reading from address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
         //std::cout<<"End READ4"<<std::endl;
