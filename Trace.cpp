@@ -83,7 +83,8 @@ void Tracer::printCommonStart(const Thread &t)
   line.thread = &t;
 
   // TODO add option to show cycles?
-  //*line.buf << std::setw(6) << (uint64_t)line.thread->time;
+  *line.buf << std::setw(6) << (uint64_t)line.thread->time;
+  *line.buf << ' ';
   green();
   *line.buf << '<';
   printThreadName();

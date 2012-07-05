@@ -251,9 +251,9 @@ createCoreFromConfig(xmlNode *config)
   ram_size = readNumberAttribute(ram, "size");
   std::auto_ptr<Core> core(new Core(ram_size, ram_base));
   core->setCoreNumber(readNumberAttribute(config, "number"));
-  if (xmlAttr *codeReference = findAttribute(config, "codeReference")) {
-    core->setCodeReference((char*)codeReference->children->content);
-  }
+  //if (xmlAttr *codeReference = findAttribute(config, "codeReference")) {
+  //  core->setCodeReference((char*)codeReference->children->content);
+  //}
   return core;
 }
 

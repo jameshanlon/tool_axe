@@ -157,11 +157,11 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           illegalMemAccessPacket();
           return;
         }
-        if (!core.isValidAddress(memAddress)) {
+        if (!core.isValidAddress(core.physicalAddress(memAddress))) {
           illegalMemAddress();
           return;
         }
-        out(getOwner(), core.loadWord(memAddress), time);
+        out(getOwner(), core.loadWord(core.physicalAddress(memAddress)), time);
         outct(getOwner(), CT_END, time+CYCLES_PER_TICK);
         //debug(); std::cout<<"Reading from address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
@@ -172,11 +172,11 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           illegalMemAccessPacket();
           return;
         }
-        if (!core.isValidAddress(memAddress)) {
+        if (!core.isValidAddress(core.physicalAddress(memAddress))) {
           illegalMemAddress();
           return;
         }
-        core.storeWord(memValue, memAddress);
+        core.storeWord(memValue, core.physicalAddress(memAddress));
         outct(getOwner(), CT_END, time);
         //debug(); std::cout<<"Writing to address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<memValue<std::endl;

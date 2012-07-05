@@ -11,7 +11,7 @@
 #include <boost/detail/endian.hpp>
 
 /// Number of threads per core.
-#define NUM_THREADS 8
+#define NUM_THREADS 20
 
 /// Number of synchronisers per core.
 // TODO Check number.
