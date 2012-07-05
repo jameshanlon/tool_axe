@@ -420,7 +420,7 @@ emitCount()
   std::cout << "COUNT += 1;\n";
 }
 
-static void emitStats(Instruction &instruction)
+static void emitStats(const Instruction &instruction)
 {
   const std::string &name = instruction.getName();
   std::cout << "if (Stats::get().getEnabled()) {\n";
@@ -536,6 +536,7 @@ emitCode(const Instruction &instruction,
         i += 10;
         emitCycles(instruction);
         emitCount();
+        emitStats(instruction);
         emitTraceEnd();
         std::cout << "EXCEPTION(";
         const char *close = scanClosingBracket(&s[i]);
@@ -549,6 +550,7 @@ emitCode(const Instruction &instruction,
         i += 6;
         emitCycles(instruction);
         emitCount();
+        emitStats(instruction);
         emitRegWriteBack(instruction);
         emitTraceEnd();
         std::cout << "EXCEPTION(ET_KCALL, ";
@@ -563,6 +565,7 @@ emitCode(const Instruction &instruction,
         i += 9;
         emitCycles(instruction);
         emitCount();
+        emitStats(instruction);
         emitTraceEnd();
         std::cout << "PAUSE_ON(PC, ";
         const char *close = scanClosingBracket(&s[i]);
@@ -576,6 +579,7 @@ emitCode(const Instruction &instruction,
         i += 3;
         emitCycles(instruction);
         emitCount();
+        emitStats(instruction);
         emitRegWriteBack(instruction);
         emitCheckEvents(instruction);
         emitTraceEnd();
@@ -586,6 +590,7 @@ emitCode(const Instruction &instruction,
         i += 10;
         emitCycles(instruction);
         emitCount();
+        emitStats(instruction);
         emitCheckEventsOrDeschedule(instruction);
         emitTraceEnd();
         std::cout << "goto " << getEndLabel(instruction) << ";\n";
