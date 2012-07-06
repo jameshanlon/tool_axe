@@ -11,7 +11,6 @@
 #include "ChanEndpoint.h"
 #include "ring_buffer.h"
 #include "Token.h"
-#include "LatencyModel.h"
 
 class Chanend : public EventableResource, public ChanEndpoint {
 private:
@@ -42,7 +41,6 @@ private:
   void illegalMemAddress();
 
   /// Latency model
-  LatencyModel *latencyModel;
   ticks_t lastTime, lastLatency;
   ticks_t getLatency(Chanend *dest, int numTokens, bool routeOpen, ticks_t time);
 
@@ -118,7 +116,6 @@ public:
   }
 
   bool setData(Thread &thread, uint32_t value, ticks_t time);
-  void setLatencyModel(LatencyModel *p);
 
   ResOpResult outt(Thread &thread, uint8_t value, ticks_t time);
   ResOpResult outct(Thread &thread, uint8_t value, ticks_t time);

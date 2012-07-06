@@ -15,7 +15,7 @@
 
 /// Number of synchronisers per core.
 // TODO Check number.
-#define NUM_SYNCS 8
+#define NUM_SYNCS 20
 
 /// Number of locks per core.
 #define NUM_LOCKS 4

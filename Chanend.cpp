@@ -8,6 +8,7 @@
 #include "Node.h"
 #include "SystemState.h"
 #include "TokenDelay.h"
+#include "LatencyModel.h"
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -164,10 +165,9 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
         out(getOwner(), core.loadWord(core.physicalAddress(memAddress)),
             time+Config::get().latencyMemory);
         outct(getOwner(), CT_END, 
-            time+Config::get().latencyMemory);
-        // Update the time of this thread to account for these operations
-        getOwner().time += Config::get().latencyMemory+CYCLES_PER_TICK;
             time+Config::get().latencyMemory+CYCLES_PER_TICK);
+        // Update the time of this thread to account for these operations
+        getOwner().time += Config::get().latencyMemory+(2*CYCLES_PER_TICK);
         //debug(); std::cout<<"Reading from address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
         //std::cout<<"End READ4"<<std::endl;
@@ -183,9 +183,9 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
         }
         core.storeWord(memValue, core.physicalAddress(memAddress));
         outct(getOwner(), CT_END, 
-            time+Config::get().latencyMemory);
+            time+Config::get().latencyMemory+CYCLES_PER_TICK);
         // Update the time of this thread to account for these operations
-        getOwner().time += Config::get().latencyMemory+CYCLES_PER_TICK; 
+        getOwner().time += Config::get().latencyMemory+(2*CYCLES_PER_TICK);
         //debug(); std::cout<<"Writing to address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<memValue<std::endl;
         //std::cout<<"End WRITE4"<<std::endl;
@@ -253,10 +253,6 @@ bool Chanend::setData(Thread &thread, uint32_t value, ticks_t time)
   return true;
 }
 
-void Chanend::setLatencyModel(LatencyModel *p) {
-  latencyModel = p;
-}
-
 ticks_t Chanend::getLatency(Chanend *dest, int numTokens, bool inPacket,
     ticks_t time) {
   // Might be a switch
@@ -266,7 +262,7 @@ ticks_t Chanend::getLatency(Chanend *dest, int numTokens, bool inPacket,
     uint32_t destCore = dest->getOwner().getParent().getCoreNumber();
     uint32_t destNode = dest->getOwner().getParent().getParent()->getNodeID();
     //std::cout<<sourceNode<<" - "<<destNode<<std::endl;
-    ticks_t latency = latencyModel->calc(sourceCore, sourceNode, destCore, destNode,
+    ticks_t latency = LatencyModel::get().calc(sourceCore, sourceNode, destCore, destNode,
         numTokens, inPacket);
     // Don't let tokens over take one another
     if (time+latency < lastTime+lastLatency) {
