@@ -45,13 +45,14 @@ static void printUsage(const char *ProgName) {
   std::cout << "Usage: " << ProgName << " [options] filename\n";
   std::cout <<
 "General Options:\n"
-"  -h Display this information.\n"
-"  -c Specify a configuration file.\n"
-"  -C Specify a configuration file and display values.\n"
-"  -t Enable instruction tracing.\n"
-"  -s Simulate a se program.\n"
-"  -S Display system statistics.\n"
-"  -I Display instruction statistics.\n"
+"  -h        Display this information\n"
+"  -c <file> Specify a configuration file\n"
+"  -s <file> Load an 'se' executable\n"
+"  -p        Display the simulation parameters\n"
+"  -t        Enable instruction tracing\n"
+"  -S        Display system statistics\n"
+"  -T        Display thread statistics\n"
+"  -I        Display instruction statistics\n"
 "\n";
 }
 
@@ -502,7 +503,7 @@ readSE(const char *filename, SymbolInfo &SI, std::set<Core*> &coresWithImage,
 }
 
 int loop(const char *filename, bool tracing, bool se, 
-    bool systemStats, bool instStats) {
+    bool systemStats, bool threadStats, bool instStats) {
   std::auto_ptr<SymbolInfo> SI(new SymbolInfo);
   std::set<Core*> coresWithImage;
   std::map<Core*,uint32_t> entryPoints;
@@ -561,7 +562,9 @@ int loop(const char *filename, bool tracing, bool se,
 
   // Display statistics
   if (systemStats)
-    sys.stats();
+    sys.systemStats();
+  if (threadStats)
+    sys.threadStats();
   if (instStats)
     Stats::get().dump();
 
@@ -576,8 +579,10 @@ main(int argc, char **argv) {
   }
   const char *file = 0;
   bool tracing = false;
-  bool se = false;
+  bool loadSE = false;
+  bool displayConfig = false;
   bool systemStats = false;
+  bool threadStats = false;
   bool instStats = false;
   std::string arg;
   for (int i = 1; i < argc; i++) {
@@ -585,7 +590,9 @@ main(int argc, char **argv) {
     if (arg == "-t") {
       tracing = true;
     } else if (arg == "-s") {
-      se = true;
+      loadSE = true;
+    } else if (arg == "-p") {
+      displayConfig = true;
     } else if (arg == "-c") {
       if (i + 1 > argc) {
         printUsage(argv[0]);
@@ -594,20 +601,13 @@ main(int argc, char **argv) {
       if(!Config::get().read(argv[i + 1])) 
         return 1;
       i++;
-    } else if (arg == "-C") {
-      if (i + 1 > argc) {
-        printUsage(argv[0]);
-        return 1;
-      }
-      if(!Config::get().read(argv[i + 1])) 
-        return 1;
-      Config::get().display();
-      i++;
     } else if (arg == "-S") {
       systemStats = true;
+    } else if (arg == "-T") {
+      threadStats = true;
     } else if (arg == "-I") {
       instStats = true;
-    } else if (arg == "--help") {
+    } else if (arg == "-h") {
       printUsage(argv[0]);
       return 0;
     } else {
@@ -627,5 +627,8 @@ main(int argc, char **argv) {
     Tracer::get().setColour(true);
   }
 #endif
-  return loop(file, tracing, se, systemStats, instStats);
+  if(displayConfig) {
+    Config::get().display();
+  }
+  return loop(file, tracing, loadSE, systemStats, threadStats, instStats);
 }

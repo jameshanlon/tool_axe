@@ -92,7 +92,7 @@ int SystemState::run()
   return 1;
 }
 
-void SystemState::stats(/*double elapsedTime*/) {
+void SystemState::threadStats() {
   long totalCount = 0;
   ticks_t maxTime = 0;
   int numCores = 0;
@@ -124,26 +124,25 @@ void SystemState::stats(/*double elapsedTime*/) {
       }
     }
   }
+}
 
-  // Simulation parameters
-  std::cout << std::endl;
-  double ramSizeKB = (double) RAM_SIZE / 1000.0;
-  double coreFreqMHz = (double) CYCLES_PER_SEC / 1000000.0;
-  double aggregateRam = ((double) numCores * ramSizeKB) / 1000.0;
-  std::cout << "Simulation parameters =========================="
-    << std::endl;
-  std::cout << "Num cores:                    "
-    << numCores << std::endl;
-  std::cout << "Num threads per core:         " 
-    << NUM_THREADS << std::endl;
-  std::cout << "Memory size per core:         " 
-    << std::setprecision(4) << ramSizeKB << "KB" << std::endl;
-  std::cout << "Aggregate memory:             " 
-    << std::setprecision(4) << aggregateRam << "MB" << std::endl;
-  std::cout << "Core frequency:               " 
-    << std::setprecision(4) << coreFreqMHz << "MHz" << std::endl;
-  //std::cout << "Memory latency (cycles):      "
-  //  << MEMORY_ACCESS_CYCLES << std::endl;
+void SystemState::systemStats() {
+  long totalCount = 0;
+  ticks_t maxTime = 0;
+  int numCores = 0;
+  for (node_iterator nIt=node_begin(), nEnd=node_end(); nIt!=nEnd; ++nIt) {
+    Node &node = **nIt;
+    for (Node::core_iterator cIt=node.core_begin(), cEnd=node.core_end(); 
+        cIt!=cEnd; ++cIt) {
+      Core &core = **cIt;
+      numCores++;
+      for (int i=0; i<NUM_THREADS; i++) {
+        Thread &thread = core.getThread(i);
+        totalCount += thread.count;
+        maxTime = maxTime > thread.time ? maxTime : thread.time;
+      }
+    }
+  }
   
   // Simulated performance
   double seconds = (double) maxTime / 100000000.0;
@@ -152,9 +151,14 @@ void SystemState::stats(/*double elapsedTime*/) {
   long peakOpsPerSec = CYCLES_PER_SEC;
   long peakGOpsPerSec = peakOpsPerSec / 1000000000.0;
   double perCentPeak = (100.0/(double) peakOpsPerSec) * opsPerSec;
-  std::cout << std::endl;
+  double ramSizeKB = (double) RAM_SIZE / 1000.0;
+  double aggregateRam = ((double) numCores * ramSizeKB) / 1000.0;
   std::cout << "Simulated performance =========================="
     << std::endl;
+  std::cout << "Num cores:                    "
+    << numCores << std::endl;
+  std::cout << "Aggregate memory:             " 
+    << std::setprecision(4) << aggregateRam << "MB" << std::endl;
   std::cout << "Total instructions executed:  "
     << totalCount << std::endl;
   std::cout << "Total cycles:                 "

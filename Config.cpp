@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <string.h>
+#include <iomanip>
 
 #include "Config.h"
 
@@ -78,21 +79,50 @@ int Config::read(const std::string &file) {
 }
 
 void Config::display() {
+  // Fixed system parameters
+  double ramSizeKB = (double) RAM_SIZE / 1000.0;
+  double coreFreqMHz = (double) CYCLES_PER_SEC / 1000000.0;
   std::cout.fill('=');
-  std::cout.width(26);
-  std::cout << std::left << "Configuration " << std::endl;
+  std::cout.width(38);
+  std::cout << std::left << "System parameters " << std::endl;
   std::cout.fill(' ');
-  PRINT_PARAM("Switches per chip",      switchesPerChip);
-  PRINT_PARAM("Tiles per switch",       tilesPerSwitch);
-  PRINT_PARAM("Tiles per chip",         tilesPerChip);
-  PRINT_PARAM("Latency memory",         latencyMemory/CYCLES_PER_TICK);
-  PRINT_PARAM("Latency thread",         latencyThread);
-  PRINT_PARAM("Latency token",          latencyToken);
-  PRINT_PARAM("Latency tile to switch", latencyTileSwitch);
-  PRINT_PARAM("Latency switch",         latencySwitch);
-  PRINT_PARAM("Latency switch closed",  latencySwitchClosed);
-  PRINT_PARAM("Latency serialisation",  latencySerialisation);
-  PRINT_PARAM("Latency link on-chip",   latencyLinkOnChip);
-  PRINT_PARAM("Latency link off-chip",  latencyLinkOffChip);
+  std::cout << "Num threads per core:         " 
+    << NUM_THREADS << std::endl;
+  std::cout << "Num synchronisers per core:   " 
+    << NUM_SYNCS << std::endl;
+  std::cout << "Num locks per core:           " 
+    << NUM_LOCKS << std::endl;
+  std::cout << "Num timers per core:          " 
+    << NUM_TIMERS << std::endl;
+  std::cout << "Num channel ends per core:    " 
+    << NUM_CHANENDS << std::endl;
+  std::cout << "Memory size per core:         " 
+    << std::setprecision(4) << ramSizeKB << "KB" << std::endl;
+  std::cout << "Core frequency:               " 
+    << std::setprecision(4) << coreFreqMHz << "MHz" << std::endl;
+  std::cout << "Thread cycles:                "
+    << INSTRUCTION_CYCLES << std::endl;
+  std::cout << "Memory latency (cycles):      "
+    << Config::get().latencyMemory << std::endl;
+
+  // Latency model parameters
+  if (latencyModelType != NONE) { 
+    std::cout.fill('=');
+    std::cout.width(40);
+    std::cout << std::left << "Latency model parameters " << std::endl;
+    std::cout.fill(' ');
+    PRINT_PARAM("Switches per chip",      switchesPerChip);
+    PRINT_PARAM("Tiles per switch",       tilesPerSwitch);
+    PRINT_PARAM("Tiles per chip",         tilesPerChip);
+    PRINT_PARAM("Latency memory",         latencyMemory/CYCLES_PER_TICK);
+    PRINT_PARAM("Latency thread",         latencyThread);
+    PRINT_PARAM("Latency token",          latencyToken);
+    PRINT_PARAM("Latency tile to switch", latencyTileSwitch);
+    PRINT_PARAM("Latency switch",         latencySwitch);
+    PRINT_PARAM("Latency switch closed",  latencySwitchClosed);
+    PRINT_PARAM("Latency serialisation",  latencySerialisation);
+    PRINT_PARAM("Latency link on-chip",   latencyLinkOnChip);
+    PRINT_PARAM("Latency link off-chip",  latencyLinkOffChip);
+  }
 }
 

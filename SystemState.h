@@ -32,7 +32,8 @@ public:
   ~SystemState();
   RunnableQueue &getScheduler() { return scheduler; }
   void addNode(std::auto_ptr<Node> n);
-  void stats();
+  void threadStats();
+  void systemStats();
   
   bool hasTimeSliceExpired(ticks_t time) const {
     if (scheduler.empty())

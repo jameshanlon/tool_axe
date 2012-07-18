@@ -39,7 +39,7 @@
  NUM_16BIT_PORTS + NUM_32BIT_PORTS)
 
 /// Log base 2 of memory size in bytes.
-#define RAM_SIZE_LOG 16
+#define RAM_SIZE_LOG 18
 
 /// Default size of ram in bytes
 #define RAM_SIZE (1 << RAM_SIZE_LOG)
