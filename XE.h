@@ -18,6 +18,7 @@ public:
     XE_SECTOR_BINARY = 1,
     XE_SECTOR_ELF = 2,
     XE_SECTOR_CONFIG = 3,
+    XE_SECTOR_GOTO = 5,
     XE_SECTOR_LAST = 0x5555,
   };
 private:

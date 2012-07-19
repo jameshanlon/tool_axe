@@ -371,26 +371,91 @@ addToCoreMap(std::map<std::pair<unsigned, unsigned>,Core*> &coreMap,
 }
 
 static inline std::auto_ptr<SystemState>
-readXE(const char *filename, SymbolInfo &SI,
-       std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints)
+readXEWithoutConfig(const char *filename, SymbolInfo &SI, 
+    std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints, 
+    XE &xe)
 {
-  // Load the file into memory.
-  XE xe(filename);
-  if (!xe) {
-    std::cerr << "Error opening \"" << filename << "\"" << std::endl;
-    std::exit(1);
+  //std::cout<<"Reading XE without config"<<std::endl;
+  // Count the number of cores (GOTOs)
+  int numCores = 0;
+  for (std::vector<const XESector *>::const_reverse_iterator
+       it = xe.getSectors().rbegin(), end = xe.getSectors().rend(); it != end;
+       ++it) {
+    switch((*it)->getType()) {
+    default:
+      break;
+    case XESector::XE_SECTOR_GOTO:
+      numCores++;
+      break;
+    }
   }
-  xe.read();
-  // TODO handle XEs / XBs without a config sector.
-  const XESector *configSector = xe.getConfigSector();
-  if (!configSector) {
-    std::cerr << "Error: No config file found in \"" << filename << "\"" << std::endl;
-    std::exit(1);
+  //std::cout<<numCores<<" cores"<<std::endl;
+ 
+  // Create the system
+  std::auto_ptr<SystemState> systemState(new SystemState());
+  std::map<long, Node*> nodeNumberMap;
+
+  // Create a single parent node
+  std::auto_ptr<Node> node(new Node(Node::XS1_L));
+  unsigned jtagIndex = 0;
+  node->setJtagIndex(jtagIndex);
+  nodeNumberMap.insert(std::make_pair(jtagIndex, node.get()));
+
+  // Create child cores
+  for (int i=0; i<numCores; i++) {
+    std::auto_ptr<Core> core(new Core(RAM_SIZE, RAM_BASE));
+    core->setCoreNumber(i);
+    node->addCore(core);
+    //std::cout<<"Created core "<<i<<"\n";
   }
-  std::auto_ptr<SystemState> system =
+
+  node->setNodeID(jtagIndex);
+  systemState->addNode(node);
+  std::map<std::pair<unsigned, unsigned>, Core*> coreMap;
+  addToCoreMap(coreMap, *systemState);
+
+  // Load the ELF images on to cores
+  for (std::vector<const XESector *>::const_reverse_iterator
+       it = xe.getSectors().rbegin(), end = xe.getSectors().rend(); it != end;
+       ++it) {
+    switch((*it)->getType()) {
+    default:
+      break;
+    case XESector::XE_SECTOR_ELF:
+      {
+        const XEElfSector *elfSector = static_cast<const XEElfSector*>(*it);
+        unsigned jtagIndex = elfSector->getNode();
+        unsigned coreNum = elfSector->getCore();
+        Core *core = coreMap[std::make_pair(jtagIndex, coreNum)];
+        if (!core) {
+          std::cerr << "Error: cannot find node " << jtagIndex
+                    << ", core " << coreNum << std::endl;
+          std::exit(1);
+        }
+        if (coresWithImage.count(core))
+          continue;
+        std::auto_ptr<CoreSymbolInfo> CSI;
+        readElf(filename, elfSector, *core, CSI, entryPoints);
+        SI.add(core, CSI);
+        coresWithImage.insert(core);
+        //std::cout<<"Loaded ELF image for core "<<coreNum<<" node "<<jtagIndex<<std::endl;
+        break;
+      }
+    }
+  }
+
+  return systemState;
+}
+
+static inline std::auto_ptr<SystemState>
+readXEWithConfig(const char *filename, SymbolInfo &SI, 
+    std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints, 
+    XE &xe, const XESector *configSector)
+{
+  std::auto_ptr<SystemState> systemState =
     createSystemFromConfig(filename, configSector);
   std::map<std::pair<unsigned, unsigned>,Core*> coreMap;
-  addToCoreMap(coreMap, *system);
+  addToCoreMap(coreMap, *systemState);
   for (std::vector<const XESector *>::const_reverse_iterator
        it = xe.getSectors().rbegin(), end = xe.getSectors().rend(); it != end;
        ++it) {
@@ -416,8 +481,28 @@ readXE(const char *filename, SymbolInfo &SI,
       }
     }
   }
+  
+  return systemState;
+}
+
+static inline std::auto_ptr<SystemState>
+readXE(const char *filename, SymbolInfo &SI,
+       std::set<Core*> &coresWithImage, std::map<Core*,uint32_t> &entryPoints) 
+{
+  // Load the file into memory.
+  XE xe(filename);
+  if (!xe) {
+    std::cerr << "Error opening \"" << filename << "\"" << std::endl;
+    std::exit(1);
+  }
+  xe.read();
+  const XESector *configSector = xe.getConfigSector();
+  std::auto_ptr<SystemState> systemState = 
+      configSector ? readXEWithConfig(filename, SI, coresWithImage,
+          entryPoints, xe, configSector) 
+      : readXEWithoutConfig(filename, SI, coresWithImage, entryPoints, xe);
   xe.close();
-  return system;
+  return systemState;
 }
 
 static inline std::auto_ptr<SystemState>
