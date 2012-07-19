@@ -129,6 +129,7 @@ void SystemState::threadStats() {
 void SystemState::systemStats() {
   long totalCount = 0;
   ticks_t maxTime = 0;
+  ticks_t maxCore0Time = 0;
   int numCores = 0;
   for (node_iterator nIt=node_begin(), nEnd=node_end(); nIt!=nEnd; ++nIt) {
     Node &node = **nIt;
@@ -137,9 +138,15 @@ void SystemState::systemStats() {
       Core &core = **cIt;
       numCores++;
       for (int i=0; i<NUM_THREADS; i++) {
-        Thread &thread = core.getThread(i);
-        totalCount += thread.count;
-        maxTime = maxTime > thread.time ? maxTime : thread.time;
+        Thread &t = core.getThread(i);
+        totalCount += t.count;
+        maxTime = maxTime > t.time ? maxTime : t.time;
+      }
+      if (core.getCoreNumber() == 0) {
+        for (int i=0; i<NUM_THREADS; i++) {
+          Thread &t = core.getThread(i);
+          maxCore0Time = maxCore0Time > t.time ? maxCore0Time : t.time;
+        }
       }
     }
   }
@@ -161,8 +168,10 @@ void SystemState::systemStats() {
     << std::setprecision(4) << aggregateRam << "MB" << std::endl;
   std::cout << "Total instructions executed:  "
     << totalCount << std::endl;
-  std::cout << "Total cycles:                 "
+  std::cout << "Max thread cycles:            "
     << maxTime << std::endl;
+  std::cout << "Max core 0 thread cycles:     "
+    << maxCore0Time << std::endl;
   std::cout << "Elapsed time:                 " 
     << std::setprecision(3) << seconds << "s" << std::endl;
   std::cout << "Instructions per second:      "
