@@ -35,7 +35,8 @@ int Config::read(const std::string &file) {
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
     READ_VAL_PARAM("tiles-per-switch",         tilesPerSwitch);
     READ_VAL_PARAM("switches-per-chip",        switchesPerChip);
-    READ_VAL_PARAM("latency-memory",           latencyMemory);
+    READ_VAL_PARAM("latency-global-memory",    latencyGlobalMemory);
+    READ_VAL_PARAM("latency-local-memory",     latencyLocalMemory);
     READ_VAL_PARAM("latency-thread",           latencyThread);
     READ_VAL_PARAM("latency-token",            latencyToken);
     READ_VAL_PARAM("latency-tile-switch",      latencyTileSwitch);
@@ -72,7 +73,8 @@ int Config::read(const std::string &file) {
   }
   
   // (Re)calculate consequential parameters
-  latencyMemory *= CYCLES_PER_TICK;
+  latencyGlobalMemory *= CYCLES_PER_TICK;
+  latencyLocalMemory *= CYCLES_PER_TICK;
   tilesPerChip = switchesPerChip * tilesPerSwitch;
 
   return 1;
@@ -102,8 +104,6 @@ void Config::display() {
     << std::setprecision(4) << coreFreqMHz << "MHz" << std::endl;
   std::cout << "Thread cycles:                "
     << INSTRUCTION_CYCLES << std::endl;
-  std::cout << "Memory latency (cycles):      "
-    << Config::get().latencyMemory << std::endl;
 
   // Latency model parameters
   if (latencyModelType != NONE) { 
@@ -114,7 +114,8 @@ void Config::display() {
     PRINT_PARAM("Switches per chip",      switchesPerChip);
     PRINT_PARAM("Tiles per switch",       tilesPerSwitch);
     PRINT_PARAM("Tiles per chip",         tilesPerChip);
-    PRINT_PARAM("Latency memory",         latencyMemory/CYCLES_PER_TICK);
+    PRINT_PARAM("Latency global memory",  latencyGlobalMemory/CYCLES_PER_TICK);
+    PRINT_PARAM("Latency local memory",   latencyLocalMemory/CYCLES_PER_TICK);
     PRINT_PARAM("Latency thread",         latencyThread);
     PRINT_PARAM("Latency token",          latencyToken);
     PRINT_PARAM("Latency tile to switch", latencyTileSwitch);

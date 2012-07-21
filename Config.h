@@ -97,7 +97,8 @@ public:
   unsigned switchesPerChip;
   unsigned tilesPerSwitch;
   unsigned tilesPerChip;
-  unsigned latencyMemory;
+  unsigned latencyGlobalMemory;
+  unsigned latencyLocalMemory;
   unsigned latencyThread;
   unsigned latencyToken;
   unsigned latencyTileSwitch;
@@ -115,7 +116,8 @@ public:
 private:
   Config() {
     latencyModelType = NONE;
-    latencyMemory = 0;
+    latencyGlobalMemory = 0;
+    latencyLocalMemory = 0;
   }
 };
 

@@ -163,11 +163,11 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           return;
         }
         out(getOwner(), core.loadWord(core.physicalAddress(memAddress)),
-            time+Config::get().latencyMemory);
+            time+Config::get().latencyGlobalMemory);
         outct(getOwner(), CT_END, 
-            time+Config::get().latencyMemory+CYCLES_PER_TICK);
+            time+Config::get().latencyGlobalMemory+CYCLES_PER_TICK);
         // Update the time of this thread to account for these operations
-        getOwner().time += Config::get().latencyMemory+(2*CYCLES_PER_TICK);
+        getOwner().time += Config::get().latencyGlobalMemory+(2*CYCLES_PER_TICK);
         //debug(); std::cout<<"Reading from address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
         //std::cout<<"End READ4"<<std::endl;
@@ -183,9 +183,9 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
         }
         core.storeWord(memValue, core.physicalAddress(memAddress));
         outct(getOwner(), CT_END, 
-            time+Config::get().latencyMemory+CYCLES_PER_TICK);
+            time+Config::get().latencyGlobalMemory+CYCLES_PER_TICK);
         // Update the time of this thread to account for these operations
-        getOwner().time += Config::get().latencyMemory+(2*CYCLES_PER_TICK);
+        getOwner().time += Config::get().latencyGlobalMemory+(2*CYCLES_PER_TICK);
         //debug(); std::cout<<"Writing to address "
         //  <<std::hex<<memAddress<<std::dec<<" = "<<memValue<std::endl;
         //std::cout<<"End WRITE4"<<std::endl;

@@ -565,7 +565,8 @@ do { \
 #define PC pc
 #define TIME this->time
 #define COUNT this->count
-#define MEMORY_ACCESS_CYCLES Config::get().latencyMemory
+#define LOCAL_MEMORY_ACCESS_CYCLES Config::get().latencyLocalMemory
+#define GLOBAL_MEMORY_ACCESS_CYCLES Config::get().latencyGlobalMemory
 #define TO_PC(addr) (core->physicalAddress(addr) >> 1)
 #define FROM_PC(addr) core->virtualAddress((addr) << 1)
 #define CHECK_PC(addr) ((addr) < (core->ram_size << 1))
