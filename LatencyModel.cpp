@@ -47,13 +47,21 @@ int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip,
   latency += Config::get().latencyToken * numTokens;
   latency += Config::get().latencyTileSwitch * 2;
   // Fixed overhead
-  latency += (hopsOnChip+hopsOffChip+1)*Config::get().latencySwitch;
   latency += hopsOnChip*Config::get().latencyLinkOnChip;
   latency += hopsOffChip*Config::get().latencyLinkOffChip;
   latency += (hopsOnChip+hopsOffChip>0) ? Config::get().latencySerialisation : 0;
-  // Overhead of opening a route through switches
-  if (!inPacket) {
-    latency += (hopsOnChip+hopsOffChip+1)*Config::get().latencySwitchClosed;
+  // Switch latency only
+  if (inPacket) {
+    latency += (hopsOnChip+hopsOffChip+1)*Config::get().latencySwitch;
+  }
+  // Latency due to opening a route through switches and contention
+  else {
+    latency += (hopsOnChip+hopsOffChip+1) * 
+      (int) ceil((float) Config::get().latencySwitch /
+        Config::get().switchContentionFactor);
+    latency += (hopsOnChip+hopsOffChip+1) *
+      (int) ceil((float) Config::get().latencySwitchClosed /
+         Config::get().switchContentionFactor);
   }
   return latency;
 }
@@ -163,91 +171,114 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
       onChipY = abs(s_switchY - t_switchY);
     }
     break;
+
+  case Config::RAND_2DMESH:
+  case Config::RAND_2DTORUS:
+    assert(0);
+    break;
   }
 
   return switchLatency(onChipX+onChipY, offChipX+offChipY, numTokens, inPacket);
 }
 
 int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
-  if (s == t) {
-    return threadLatency();
-  }
-  else {
-    int switchS = int(s / Config::get().tilesPerSwitch);
-    int switchT = int(t / Config::get().tilesPerSwitch);
-    // Count mismatching bits
-    int numHops = 0;
-    for(size_t i=0; i<8*sizeof(unsigned); i++) {
-      if (((switchS ^ switchT) & (1 << i)) > 0)
-          numHops++;
-    }
-    int maxHopsOnChip = (int)(log(Config::get().switchesPerChip) / log(2));
-    if (maxHopsOnChip < numHops) {
-      int hopsOffChip = numHops - maxHopsOnChip;
-      return switchLatency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
-      /*if (!inPacket) {
-        switch (hopsOffChip) {
-          case 1: return 31;
-          case 2: return 41;
-          case 3: return 50;
-          case 4: return 59;
-          default: assert(0);
-        }
-      } else {
-        switch (hopsOffChip) {
-          case 1: return 19;
-          case 2: return 26;
-          case 3: return 32;
-          case 4: return 38;
-          default: assert(0);
-        }
-      }*/
+  switch(Config::get().latencyModelType) {
+  default: assert(0);
+  
+  case Config::SP_HYPERCUBE:
+    if (s == t) {
+      return threadLatency();
     }
     else {
-      return switchLatency(numHops, 0, numTokens, inPacket);
-      /*if (!inPacket) {
-        return 10;
-      } else {
-        return 8;
-      }*/
+      int switchS = int(s / Config::get().tilesPerSwitch);
+      int switchT = int(t / Config::get().tilesPerSwitch);
+      // Count mismatching bits
+      int numHops = 0;
+      for(size_t i=0; i<8*sizeof(unsigned); i++) {
+        if (((switchS ^ switchT) & (1 << i)) > 0)
+            numHops++;
+      }
+      int maxHopsOnChip = (int)(log(Config::get().switchesPerChip) / log(2));
+      if (maxHopsOnChip < numHops) {
+        int hopsOffChip = numHops - maxHopsOnChip;
+        return switchLatency(maxHopsOnChip, hopsOffChip, numTokens, inPacket);
+        /*if (!inPacket) {
+          switch (hopsOffChip) {
+            case 1: return 31;
+            case 2: return 41;
+            case 3: return 50;
+            case 4: return 59;
+            default: assert(0);
+          }
+        } else {
+          switch (hopsOffChip) {
+            case 1: return 19;
+            case 2: return 26;
+            case 3: return 32;
+            case 4: return 38;
+            default: assert(0);
+          }
+        }*/
+      }
+      else {
+        return switchLatency(numHops, 0, numTokens, inPacket);
+        /*if (!inPacket) {
+          return 10;
+        } else {
+          return 8;
+        }*/
+      }
     }
+    break;
+  
+  case Config::RAND_HYPERCUBE:
+    assert(0);
+    break;
   }
 }
 
 // TODO: fix this for new Clos arrangement
 int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
-  if (s == t) {
-    return threadLatency();
-  }
-  else {
-    // If attached to the same edge switch
-    if ((int)(s/Config::get().tilesPerSwitch) == (int)(t/Config::get().tilesPerSwitch)) {
-      return switchLatency(0, 0, numTokens, inPacket);
+  switch(Config::get().latencyModelType) {
+  default: assert(0);
+  
+  case Config::SP_CLOS:
+    if (s == t) {
+      return threadLatency();
     }
-    // If in the same chip
-    else if ((int)(s/Config::get().tilesPerChip) == (int)(t/Config::get().tilesPerChip)) {
-      switch(numCores) {
-      default: assert(0);
-      case 64:
-      case 128:
-      case 256:
-      case 512:
-        return switchLatency(2, 0, numTokens, inPacket);
-      case 1024:
-      case 2048:
-      case 4096:
-        if ((int)(s/(Config::get().tilesPerSwitch*Config::get().tilesPerSwitch)) ==
-            (int)(t/(Config::get().tilesPerSwitch*Config::get().tilesPerSwitch)))
+    else {
+      // If attached to the same edge switch
+      if ((int)(s/Config::get().tilesPerSwitch) == (int)(t/Config::get().tilesPerSwitch)) {
+        return switchLatency(0, 0, numTokens, inPacket);
+      }
+      // If in the same chip
+      else if ((int)(s/Config::get().tilesPerChip) == (int)(t/Config::get().tilesPerChip)) {
+        switch(numCores) {
+        default: assert(0);
+        case 64:
+        case 128:
+        case 256:
+        case 512:
           return switchLatency(2, 0, numTokens, inPacket);
-        return switchLatency(4, 0, numTokens, inPacket);
+        case 1024:
+        case 2048:
+        case 4096:
+          if ((int)(s/(Config::get().tilesPerSwitch*Config::get().tilesPerSwitch)) ==
+              (int)(t/(Config::get().tilesPerSwitch*Config::get().tilesPerSwitch)))
+            return switchLatency(2, 0, numTokens, inPacket);
+          return switchLatency(4, 0, numTokens, inPacket);
+        }
+      }
+      // Otherwise traverse edge-core-edge switches
+      else {
+        // Not modelling these
+        assert(0);
+        return 0;
       }
     }
-    // Otherwise traverse edge-core-edge switches
-    else {
-      // Not modelling these
-      assert(0);
-      return 0;
-    }
+  case Config::RAND_CLOS:
+    assert(0);
+    break;
   }
 }
 
@@ -275,14 +306,18 @@ ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode,
 
   case Config::SP_2DMESH:
   case Config::SP_2DTORUS:
+  case Config::RAND_2DMESH:
+  case Config::RAND_2DTORUS:
     latency = calc2DArray(s, t, numTokens, inPacket);
     break;
   
   case Config::SP_HYPERCUBE:
+  case Config::RAND_HYPERCUBE:
     latency = calcHypercube(s, t, numTokens, inPacket);
     break;
   
   case Config::SP_CLOS:
+  case Config::RAND_CLOS:
     latency = calcClos(s, t, numTokens, inPacket);
     break;
   }

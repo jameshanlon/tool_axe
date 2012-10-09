@@ -6,9 +6,14 @@
 #include "Config.h"
 
 #define BUF_LEN 1000 
-#define READ_VAL_PARAM(key, var) \
+#define READ_U_PARAM(key, var) \
 if (!strncmp(key, line, strlen(key))) { \
   sscanf(line, key " %[(:-~)*]%u", str, &(var)); \
+  continue; \
+}
+#define READ_F_PARAM(key, var) \
+if (!strncmp(key, line, strlen(key))) { \
+  sscanf(line, key " %[(:-~)*]%f", str, &(var)); \
   continue; \
 }
 #define PRINT_PARAM(key, val) \
@@ -33,36 +38,40 @@ int Config::read(const std::string &file) {
   
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
-    READ_VAL_PARAM("tiles-per-switch",         tilesPerSwitch);
-    READ_VAL_PARAM("switches-per-chip",        switchesPerChip);
-    READ_VAL_PARAM("latency-global-memory",    latencyGlobalMemory);
-    READ_VAL_PARAM("latency-local-memory",     latencyLocalMemory);
-    READ_VAL_PARAM("latency-thread",           latencyThread);
-    READ_VAL_PARAM("latency-token",            latencyToken);
-    READ_VAL_PARAM("latency-tile-switch",      latencyTileSwitch);
-    READ_VAL_PARAM("latency-switch",           latencySwitch);
-    READ_VAL_PARAM("latency-closed-switch",    latencySwitchClosed);
-    READ_VAL_PARAM("latency-serialisation",    latencySerialisation);
-    READ_VAL_PARAM("latency-link-on-chip",     latencyLinkOnChip);
-    READ_VAL_PARAM("latency-link-off-chip",    latencyLinkOffChip);
+    READ_U_PARAM("tiles-per-switch",         tilesPerSwitch);
+    READ_U_PARAM("switches-per-chip",        switchesPerChip);
+    READ_F_PARAM("switch-contention-factor", switchContentionFactor);
+    READ_U_PARAM("latency-global-memory",    latencyGlobalMemory);
+    READ_U_PARAM("latency-local-memory",     latencyLocalMemory);
+    READ_U_PARAM("latency-thread",           latencyThread);
+    READ_U_PARAM("latency-token",            latencyToken);
+    READ_U_PARAM("latency-tile-switch",      latencyTileSwitch);
+    READ_U_PARAM("latency-switch",           latencySwitch);
+    READ_U_PARAM("latency-closed-switch",    latencySwitchClosed);
+    READ_U_PARAM("latency-serialisation",    latencySerialisation);
+    READ_U_PARAM("latency-link-on-chip",     latencyLinkOnChip);
+    READ_U_PARAM("latency-link-off-chip",    latencyLinkOffChip);
     if (!strncmp("latency-model", line, strlen("latency-model"))) {
       sscanf(line, "latency-model%[^\"]\"%[^\"]\"", junk, str);
       if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
         latencyModelType = SP_2DMESH;
-      }
-      else if (!strncmp("sp-2dtorus", str, strlen("sp-2dtorus"))) {
+      } else if (!strncmp("sp-2dtorus", str, strlen("sp-2dtorus"))) {
         latencyModelType = SP_2DTORUS;
-      }
-      else if (!strncmp("sp-hypercube", str, strlen("sp-hypercube"))) {
+      } else if (!strncmp("sp-hypercube", str, strlen("sp-hypercube"))) {
         latencyModelType = SP_HYPERCUBE;
-      }
-      else if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
+      } else if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
         latencyModelType = SP_CLOS;
-      }
-      else if (!strncmp("none", str, strlen("none"))) {
+      } else if (!strncmp("rand-2dmesh", str, strlen("rand-2dmesh"))) {
+        latencyModelType = RAND_2DMESH;
+      } else if (!strncmp("rand-2dtorus", str, strlen("rand-2dtorus"))) {
+        latencyModelType = RAND_2DTORUS;
+      } else if (!strncmp("rand-hypercube", str, strlen("rand-hypercube"))) {
+        latencyModelType = RAND_HYPERCUBE;
+      } else if (!strncmp("rand-clos", str, strlen("rand-clos"))) {
+        latencyModelType = RAND_CLOS;
+      } else if (!strncmp("none", str, strlen("none"))) {
         latencyModelType = NONE;
-      }
-      else {
+      } else {
         std::cout << "Error: invalid latency model.\n";
         return 0;
       }

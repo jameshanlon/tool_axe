@@ -92,9 +92,14 @@ public:
     SP_2DTORUS,
     SP_HYPERCUBE,
     SP_CLOS,
+    RAND_2DMESH,
+    RAND_2DTORUS,
+    RAND_HYPERCUBE,
+    RAND_CLOS,
   };
   static Config instance;
   unsigned switchesPerChip;
+  float    switchContentionFactor;
   unsigned tilesPerSwitch;
   unsigned tilesPerChip;
   unsigned latencyGlobalMemory;
