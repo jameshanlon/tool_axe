@@ -20,6 +20,8 @@ void LatencyModel::init(int n) {
   default: break;
   case Config::SP_2DMESH:
   case Config::SP_2DTORUS:
+  case Config::RAND_2DMESH:
+  case Config::RAND_2DTORUS:
     switchDimX = (int) sqrt(Config::get().switchesPerChip);
     switchDimY = (int) Config::get().switchesPerChip / switchDimX;
     chipsDimX = (int) sqrt(numCores/Config::get().tilesPerChip);
@@ -27,7 +29,8 @@ void LatencyModel::init(int n) {
 #ifdef DEBUG
     std::cout << "  Switches per chip: " << Config::get().switchesPerChip
       << " (" << switchDimX << " x " << switchDimY << ")" << std::endl;
-    std::cout << "  System cores:      " << chipsDimX*chipsDimY*Config::get().tilesPerChip 
+    std::cout << "  System cores:      " << 
+      chipsDimX*chipsDimY*Config::get().tilesPerChip 
       << " (" << chipsDimX << " x " << chipsDimY << " x " 
       << Config::get().tilesPerChip << " tiles)" << std::endl;
 #endif
@@ -39,31 +42,31 @@ int LatencyModel::threadLatency() {
   return Config::get().latencyThread;
 }
 
-int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip, 
+int LatencyModel::switchLatency(float hopsOnChip, float hopsOffChip, 
     int numTokens, bool inPacket) {
   assert(hopsOffChip==0);
   //std::cout<<hopsOnChip<<" on chip, "<<hopsOffChip<<" off"<<std::endl;
-  int latency = 0;
+  float latency = 0;
   latency += Config::get().latencyToken * numTokens;
   latency += Config::get().latencyTileSwitch * 2;
   // Fixed overhead
-  latency += hopsOnChip*Config::get().latencyLinkOnChip;
-  latency += hopsOffChip*Config::get().latencyLinkOffChip;
+  latency += hopsOnChip*(float) Config::get().latencyLinkOnChip;
+  latency += hopsOffChip*(float) Config::get().latencyLinkOffChip;
   latency += (hopsOnChip+hopsOffChip>0) ? Config::get().latencySerialisation : 0;
   // Switch latency only
   if (inPacket) {
-    latency += (hopsOnChip+hopsOffChip+1)*Config::get().latencySwitch;
+    latency += (hopsOnChip+hopsOffChip+1)*(float)Config::get().latencySwitch;
   }
   // Latency due to opening a route through switches and contention
   else {
-    latency += (hopsOnChip+hopsOffChip+1) * 
-      (int) ceil((float) Config::get().latencySwitch /
+    latency += (hopsOnChip+hopsOffChip+1.0) * 
+      ceil((float) Config::get().latencySwitch /
         Config::get().switchContentionFactor);
-    latency += (hopsOnChip+hopsOffChip+1) *
-      (int) ceil((float) Config::get().latencySwitchClosed /
+    latency += (hopsOnChip+hopsOffChip+1.0) *
+      ceil((float) Config::get().latencySwitchClosed /
          Config::get().switchContentionFactor);
   }
-  return latency;
+  return (int) ceil(latency);
 }
 
 int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
@@ -72,17 +75,17 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
   }
 
   // Source coordinates
-  int s_chip = s / Config::get().tilesPerChip;
-  int s_chipX = s_chip % chipsDimX;
-  int s_chipY = s_chip / chipsDimX;
+  //int s_chip = s / Config::get().tilesPerChip;
+  //int s_chipX = s_chip % chipsDimX;
+  //int s_chipY = s_chip / chipsDimX;
   int s_switch = (s / Config::get().tilesPerSwitch) % Config::get().switchesPerChip;
   int s_switchX = s_switch % switchDimX;
   int s_switchY = s_switch / switchDimX;
   
   // Destination coordinates
-  int t_chip = t / Config::get().tilesPerChip;
-  int t_chipX = t_chip % chipsDimX;
-  int t_chipY = t_chip / chipsDimX;
+  //int t_chip = t / Config::get().tilesPerChip;
+  //int t_chipX = t_chip % chipsDimX;
+  //int t_chipY = t_chip / chipsDimX;
   int t_switch = (t / Config::get().tilesPerSwitch) % Config::get().switchesPerChip;
   int t_switchX = t_switch % switchDimX;
   int t_switchY = t_switch / switchDimX;
@@ -112,7 +115,7 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
       break;
     }
     // x-dimension
-    if (s_chipX != t_chipX) {
+    /*if (s_chipX != t_chipX) {
       offChipX = abs(s_chipX - t_chipX);
       onChipX = s_chipX > t_chipX ? s_switchX : switchDimX-s_switchX-1;
       onChipX += s_chipX > t_chipX ? switchDimX-t_switchX-1 : t_switchX;
@@ -128,7 +131,9 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
     }
     else {
       onChipY = abs(s_switchY - t_switchY);
-    }
+    }*/
+    onChipX = abs(s_switchX - t_switchX);
+    onChipY = abs(s_switchY - t_switchY);
     break;
 
   case Config::SP_2DTORUS:
@@ -137,7 +142,7 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
       break;
     }
     // x-dimension
-    if (s_chipX != t_chipX) {
+    /*if (s_chipX != t_chipX) {
       int betweenX = abs(s_chipX - t_chipX);
       int aroundX = std::min(s_chipX, t_chipX) 
           + (chipsDimX-std::max(s_chipX, t_chipX));
@@ -169,13 +174,30 @@ int LatencyModel::calc2DArray(int s, int t, int numTokens, bool inPacket) {
     }
     else {
       onChipY = abs(s_switchY - t_switchY);
-    }
+    }*/
+    onChipX = abs(s_switchX - t_switchX);
+    onChipY = abs(s_switchY - t_switchY);
     break;
 
+  // Two-phase randomised routing
   case Config::RAND_2DMESH:
+    { float avgDistance = 0;
+      switch(numCores) {
+        default: assert(0);
+        case 64:   avgDistance = 1.33;
+        case 128:  avgDistance = 2;
+        case 256:  avgDistance = 2.67; 
+        case 512:  avgDistance = 5; 
+        case 1024: avgDistance = 5.33; 
+        case 2048: avgDistance = 8; 
+        case 4096: avgDistance = 10.67; 
+      }
+      return switchLatency(2.0*avgDistance, 0, numTokens, inPacket);
+    }
   case Config::RAND_2DTORUS:
-    assert(0);
-    break;
+    { float avgDistance = (switchDimX+switchDimY) / 4.0;
+      return switchLatency(2.0*avgDistance, 0, numTokens, inPacket);
+    }
   }
 
   return switchLatency(onChipX+onChipY, offChipX+offChipY, numTokens, inPacket);
@@ -232,7 +254,10 @@ int LatencyModel::calcHypercube(int s, int t, int numTokens, bool inPacket) {
     break;
   
   case Config::RAND_HYPERCUBE:
-    assert(0);
+    { int diameter = log(numCores/Config::get().tilesPerSwitch)/log(2);
+      float avgDistance = (float) diameter / 2.0;
+      return switchLatency(2.0*avgDistance, 0, numTokens, inPacket);
+    }
     break;
   }
 }
@@ -248,11 +273,14 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
     }
     else {
       // If attached to the same edge switch
-      if ((int)(s/Config::get().tilesPerSwitch) == (int)(t/Config::get().tilesPerSwitch)) {
+      if ((int)(s/Config::get().tilesPerSwitch) == 
+          (int)(t/Config::get().tilesPerSwitch)) {
         return switchLatency(0, 0, numTokens, inPacket);
       }
-      // If in the same chip
-      else if ((int)(s/Config::get().tilesPerChip) == (int)(t/Config::get().tilesPerChip)) {
+      else { 
+        // If in the same chip
+        //if ((int)(s/Config::get().tilesPerChip) == 
+        //  (int)(t/Config::get().tilesPerChip)) {
         switch(numCores) {
         default: assert(0);
         case 64:
@@ -269,15 +297,36 @@ int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
           return switchLatency(4, 0, numTokens, inPacket);
         }
       }
-      // Otherwise traverse edge-core-edge switches
-      else {
-        // Not modelling these
-        assert(0);
-        return 0;
+    }
+
+  case Config::RAND_CLOS:
+    if (s == t) {
+      return threadLatency();
+    }
+    else {
+      // If attached to the same edge switch
+      if ((int)(s/Config::get().tilesPerSwitch) == 
+          (int)(t/Config::get().tilesPerSwitch)) {
+        return switchLatency(0, 0, numTokens, inPacket);
+      }
+      else { 
+        // If in the same chip
+        //if ((int)(s/Config::get().tilesPerChip) == 
+        //  (int)(t/Config::get().tilesPerChip)) {
+        switch(numCores) {
+        default: assert(0);
+        case 64:
+        case 128:
+        case 256:
+        case 512:
+          return switchLatency(2, 0, numTokens, inPacket);
+        case 1024:
+        case 2048:
+        case 4096:
+          return switchLatency(4, 0, numTokens, inPacket);
+        }
       }
     }
-  case Config::RAND_CLOS:
-    assert(0);
     break;
   }
 }

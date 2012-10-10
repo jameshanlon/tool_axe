@@ -18,7 +18,7 @@ private:
   std::map<std::pair<std::pair<uint32_t, uint32_t>, bool>, ticks_t> cache;
   
   int threadLatency();
-  int switchLatency(int hopsOnChip, int hopsOffChip, int numTokens, bool inPacket);
+  int switchLatency(float hopsOnChip, float hopsOffChip, int numTokens, bool inPacket);
 
   // Dimensions for mesh and tori
   int switchDimX; // Number of switches in each dimension of a chip
