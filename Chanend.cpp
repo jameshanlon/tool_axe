@@ -320,10 +320,10 @@ out(Thread &thread, uint32_t value, ticks_t time)
   }
   // Channels are big endian
   uint8_t tokens[4] = {
-    value >> 24,
-    value >> 16,
-    value >> 8,
-    value
+    (uint8_t) (value >> 24),
+    (uint8_t) (value >> 16),
+    (uint8_t) (value >> 8),
+    (uint8_t) (value)
   };
   //dest->receiveDataTokens(time, tokens, 4);
   TokenDelay *td = new DataTokensDelay(dest, tokens, 4);

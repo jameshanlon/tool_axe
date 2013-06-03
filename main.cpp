@@ -10,6 +10,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/relaxng.h>
+#include <unistd.h>
 #include <iostream>
 #include <cassert>
 #include <cstdlib>
@@ -35,7 +36,8 @@
 #include "SystemState.h"
 #include "LatencyModel.h"
 
-#define XCORE_ELF_MACHINE 0xB49E
+#define XCORE_ELF_MACHINE_OLD 0xB49E
+#define XCORE_ELF_MACHINE 0xCB
 
 const char configSchema[] =
 #include "ConfigSchema.inc"
@@ -156,7 +158,8 @@ static void readElf(const char *filename, const XEElfSector *elfSector,
     std::cerr << "Reading ELF header failed: " << elf_errmsg(-1) << std::endl;
     std::exit(1);
   }
-  if (ehdr.e_machine != XCORE_ELF_MACHINE) {
+   if (ehdr.e_machine != XCORE_ELF_MACHINE &&
+      ehdr.e_machine != XCORE_ELF_MACHINE_OLD) {
     std::cerr << "Not a XCore ELF" << std::endl;
     std::exit(1);
   }
