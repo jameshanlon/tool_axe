@@ -56,17 +56,9 @@ int Config::read(const std::string &file) {
       if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
         latencyModelType = SP_2DMESH;
       } else if (!strncmp("sp-2dtorus", str, strlen("sp-2dtorus"))) {
-        latencyModelType = SP_2DTORUS;
-      } else if (!strncmp("sp-hypercube", str, strlen("sp-hypercube"))) {
-        latencyModelType = SP_HYPERCUBE;
-      } else if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
         latencyModelType = SP_CLOS;
       } else if (!strncmp("rand-2dmesh", str, strlen("rand-2dmesh"))) {
         latencyModelType = RAND_2DMESH;
-      } else if (!strncmp("rand-2dtorus", str, strlen("rand-2dtorus"))) {
-        latencyModelType = RAND_2DTORUS;
-      } else if (!strncmp("rand-hypercube", str, strlen("rand-hypercube"))) {
-        latencyModelType = RAND_HYPERCUBE;
       } else if (!strncmp("rand-clos", str, strlen("rand-clos"))) {
         latencyModelType = RAND_CLOS;
       } else if (!strncmp("none", str, strlen("none"))) {

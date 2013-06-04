@@ -89,12 +89,8 @@ public:
   enum LatencyModelType {
     NONE,
     SP_2DMESH,
-    SP_2DTORUS,
-    SP_HYPERCUBE,
     SP_CLOS,
     RAND_2DMESH,
-    RAND_2DTORUS,
-    RAND_HYPERCUBE,
     RAND_CLOS,
   };
   static Config instance;
@@ -112,6 +108,7 @@ public:
   unsigned latencySerialisation;
   unsigned latencyLinkOnChip;
   unsigned latencyLinkOffChip;
+  bool     contention;
   LatencyModelType latencyModelType;
   
   int read(const std::string &file);
@@ -121,6 +118,7 @@ public:
 private:
   Config() {
     latencyModelType = NONE;
+    contention = false;
     latencyGlobalMemory = 0;
     latencyLocalMemory = 0;
   }
