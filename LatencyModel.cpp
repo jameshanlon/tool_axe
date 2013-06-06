@@ -9,8 +9,8 @@
 
 LatencyModel LatencyModel::instance;
 
-void LatencyModel::init(int n) {
-  numCores = n;
+void LatencyModel::init() {
+  numCores = Config::get().numChips*Config::get().tilesPerChip;
 #ifdef DEBUG
   std::cout << "Latency model parameters" << std::endl;
   std::cout << "Num cores: " << numCores << std::endl;

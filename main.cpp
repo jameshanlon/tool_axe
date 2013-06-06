@@ -631,7 +631,7 @@ int loop(const char *filename, bool tracing, bool se,
     }
   }
   SyscallHandler::setCoreCount(coresWithImage.size());
-  LatencyModel::get().init(coresWithImage.size());
+  LatencyModel::get().init();
  
   // Inisialise instruction statistics
   if (instStats) {

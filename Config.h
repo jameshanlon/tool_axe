@@ -94,10 +94,11 @@ public:
     RAND_CLOS,
   };
   static Config instance;
-  unsigned switchesPerChip;
   float    switchContentionFactor;
-  unsigned tilesPerSwitch;
+  unsigned numChips;
   unsigned tilesPerChip;
+  unsigned switchesPerChip;
+  unsigned tilesPerSwitch;
   unsigned latencyGlobalMemory;
   unsigned latencyLocalMemory;
   unsigned latencyThread;

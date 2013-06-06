@@ -38,8 +38,9 @@ int Config::read(const std::string &file) {
   
   // Read configuration parameters
   while(fscanf(fp, "%[^\n]\n", line) != EOF) {
+    READ_U_PARAM("num-chips",                numChips);
+    READ_U_PARAM("tiles-per-chip",           tilesPerChip);
     READ_U_PARAM("tiles-per-switch",         tilesPerSwitch);
-    READ_U_PARAM("switches-per-chip",        switchesPerChip);
     READ_F_PARAM("switch-contention-factor", switchContentionFactor);
     READ_U_PARAM("latency-global-memory",    latencyGlobalMemory);
     READ_U_PARAM("latency-local-memory",     latencyLocalMemory);
@@ -55,7 +56,7 @@ int Config::read(const std::string &file) {
       sscanf(line, "latency-model%[^\"]\"%[^\"]\"", junk, str);
       if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
         latencyModelType = SP_2DMESH;
-      } else if (!strncmp("sp-2dtorus", str, strlen("sp-2dtorus"))) {
+      } else if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
         latencyModelType = SP_CLOS;
       } else if (!strncmp("rand-2dmesh", str, strlen("rand-2dmesh"))) {
         latencyModelType = RAND_2DMESH;
@@ -76,7 +77,7 @@ int Config::read(const std::string &file) {
   // (Re)calculate consequential parameters
   latencyGlobalMemory *= CYCLES_PER_TICK;
   latencyLocalMemory *= CYCLES_PER_TICK;
-  tilesPerChip = switchesPerChip * tilesPerSwitch;
+  switchesPerChip = tilesPerChip / tilesPerSwitch;
 
   return 1;
 }
@@ -112,19 +113,20 @@ void Config::display() {
     std::cout.width(40);
     std::cout << std::left << "Latency model parameters " << std::endl;
     std::cout.fill(' ');
-    PRINT_PARAM("Switches per chip",      switchesPerChip);
-    PRINT_PARAM("Tiles per switch",       tilesPerSwitch);
-    PRINT_PARAM("Tiles per chip",         tilesPerChip);
-    PRINT_PARAM("Latency global memory",  latencyGlobalMemory/CYCLES_PER_TICK);
-    PRINT_PARAM("Latency local memory",   latencyLocalMemory/CYCLES_PER_TICK);
-    PRINT_PARAM("Latency thread",         latencyThread);
-    PRINT_PARAM("Latency token",          latencyToken);
-    PRINT_PARAM("Latency tile to switch", latencyTileSwitch);
-    PRINT_PARAM("Latency switch",         latencySwitch);
-    PRINT_PARAM("Latency switch closed",  latencySwitchClosed);
-    PRINT_PARAM("Latency serialisation",  latencySerialisation);
-    PRINT_PARAM("Latency link on-chip",   latencyLinkOnChip);
-    PRINT_PARAM("Latency link off-chip",  latencyLinkOffChip);
+    PRINT_PARAM("Number of chips",          numChips);
+    PRINT_PARAM("# tiles per chip",         tilesPerChip);
+    PRINT_PARAM("# tiles per switch",       tilesPerSwitch);
+    PRINT_PARAM("Switch contention factor", switchContentionFactor);
+    PRINT_PARAM("Latency global memory",    latencyGlobalMemory/CYCLES_PER_TICK);
+    PRINT_PARAM("Latency local memory",     latencyLocalMemory/CYCLES_PER_TICK);
+    PRINT_PARAM("Latency thread",           latencyThread);
+    PRINT_PARAM("Latency token",            latencyToken);
+    PRINT_PARAM("Latency tile to switch",   latencyTileSwitch);
+    PRINT_PARAM("Latency switch",           latencySwitch);
+    PRINT_PARAM("Latency switch closed",    latencySwitchClosed);
+    PRINT_PARAM("Latency serialisation",    latencySerialisation);
+    PRINT_PARAM("Latency link on-chip",     latencyLinkOnChip);
+    PRINT_PARAM("Latency link off-chip",    latencyLinkOffChip);
   }
 }
 

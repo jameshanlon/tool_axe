@@ -7,7 +7,7 @@
 class LatencyModel {
 public:
   static LatencyModel instance;
-  void init(int numCores);
+  void init();
   ticks_t calc(uint32_t sCore, uint32_t sNode, 
       uint32_t tCore, uint32_t tNode, int numTokens, bool inPacket);
   static LatencyModel &get() { return instance; }
