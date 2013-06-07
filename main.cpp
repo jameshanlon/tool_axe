@@ -538,6 +538,12 @@ readSE(const char *filename, SymbolInfo &SI, std::set<Core*> &coresWithImage,
     std::map<Core*,uint32_t> &entryPoints)
 {
   //std::cout << "Reading " << filename << std::endl;
+
+  // Check the file has an .'se' extention
+  if (strcmp(strchr(filename, '.'), ".se")) {
+    std::cerr << "File \"" << filename << "\" does not have a \".se\" extension" << std::endl;
+    std::exit(1);
+  }
   
   // Load the file into memory.
   SE se(filename);

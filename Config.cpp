@@ -78,6 +78,9 @@ int Config::read(const std::string &file) {
   latencyGlobalMemory *= CYCLES_PER_TICK;
   latencyLocalMemory *= CYCLES_PER_TICK;
   switchesPerChip = tilesPerChip / tilesPerSwitch;
+  if (latencyModelType == RAND_CLOS || latencyModelType == RAND_2DMESH) {
+    contention = true;
+  }
 
   return 1;
 }

@@ -23,7 +23,7 @@ void LatencyModel::init() {
     switchDimX = (int) sqrt(Config::get().switchesPerChip);
     switchDimY = (int) Config::get().switchesPerChip / switchDimX;
     chipsDimX = (int) sqrt(numCores/Config::get().tilesPerChip);
-    chipsDimY = (int) numCores/Config::get().tilesPerChip / chipsDimX;
+    chipsDimY = (int) (numCores/Config::get().tilesPerChip) / chipsDimX;
 #ifdef DEBUG
     std::cout << "  Switches per chip: " << Config::get().switchesPerChip
       << " (" << switchDimX << " x " << switchDimY << ")" << std::endl;
@@ -55,17 +55,18 @@ int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip,
   latency += (float) hopsOnChip+hopsOffChip > 0 ? Config::get().latencySerialisation : 0;
   // Switch latency
   latency += (float) (hopsOnChip+hopsOffChip+1) * 
-    ((float)Config::get().latencySwitch / switchContentionFactor);
+    ((float)Config::get().latencySwitch * switchContentionFactor);
   // If route closed, latency due to opening a route through switches and contention
   if (!inPacket) {
     latency += (float) (hopsOnChip+hopsOffChip+1) *
-      ((float)Config::get().latencySwitchClosed / switchContentionFactor);
+      ((float)Config::get().latencySwitchClosed * switchContentionFactor);
   }
   // Round up and return
   return (int) ceil(latency);
 }
 
 int LatencyModel::calc2DMesh(int s, int t, int numTokens, bool inPacket) {
+  // Inter-thread
   if (s == t) {
     return threadLatency();
   }
@@ -106,10 +107,11 @@ int LatencyModel::calc2DMesh(int s, int t, int numTokens, bool inPacket) {
   default: assert(0);
   
   case Config::SP_2DMESH:
-    // Inter-thread
-    if (s == t) {
-      break;
+    // Intra-switch
+    if (s_switchX==t_switchX && s_switchY==t_switchY) {
+      return switchLatency(0, 0, numTokens, inPacket);
     }
+    // Inter-switch
     // x-dimension
     if (s_chipX != t_chipX) {
       offChipX = abs(s_chipX - t_chipX);
@@ -134,9 +136,18 @@ int LatencyModel::calc2DMesh(int s, int t, int numTokens, bool inPacket) {
   case Config::RAND_2DMESH:
     { float avgDistOnChip = 0.0;
       float avgDistOffChip = 0.0;
+      // Intra-switch
+      if (s_switchX==t_switchX && s_switchY==t_switchY) {
+        return switchLatency(0, 0, numTokens, inPacket);
+      }
+      // Inter-switch
       // Average distances in a square 16-tile-per switch mesh
       switch(numCores) {
         default: assert(0);
+        case 256:  
+          avgDistOnChip = 2.66667;
+          avgDistOffChip = 0.0;
+          break;
         case 512:  
           avgDistOnChip = 3.48387;
           avgDistOffChip = 0.516129;
@@ -154,10 +165,10 @@ int LatencyModel::calc2DMesh(int s, int t, int numTokens, bool inPacket) {
           avgDistOffChip = 3.13725;
           break;
       }
-      return switchLatency(2.0*avgDistOnChip, 2.0*avgDistOffChip, numTokens, inPacket);
+      return switchLatency(2.0*avgDistOnChip, 2.0*avgDistOffChip, 
+          numTokens, inPacket);
     }
   }
-
   return 0;
 }
 
@@ -165,59 +176,56 @@ int LatencyModel::calc2DMesh(int s, int t, int numTokens, bool inPacket) {
  * These calculations assume one or more 256-tile chips.
  */
 int LatencyModel::calcClos(int s, int t, int numTokens, bool inPacket) {
+  // Inter-thread
+  if (s == t) {
+    return threadLatency();
+  }
+
   switch(Config::get().latencyModelType) {
   default: assert(0);
   
   case Config::SP_CLOS:
-    if (s == t) {
-      return threadLatency();
+    // Intra-switch
+    if ((int)(s/Config::get().tilesPerSwitch) == 
+        (int)(t/Config::get().tilesPerSwitch)) {
+      return switchLatency(0, 0, numTokens, inPacket);
     }
+    // Inter-switch on the same chip
+    else if ((int)(s/Config::get().tilesPerChip) == 
+        (int)(t/Config::get().tilesPerChip)) {
+      return switchLatency(2, 0, numTokens, inPacket);
+    }
+    // Inter-switch on different chips
     else {
-      // If attached to the same edge switch
-      if ((int)(s/Config::get().tilesPerSwitch) == 
-          (int)(t/Config::get().tilesPerSwitch)) {
-        return switchLatency(0, 0, numTokens, inPacket);
-      }
-      // If on the same chip
-      else if ((int)(s/Config::get().tilesPerChip) == 
-          (int)(t/Config::get().tilesPerChip)) {
-        return switchLatency(2, 0, numTokens, inPacket);
-      }
-      // Or on different chips
-      else {
-        return switchLatency(2, 2, numTokens, inPacket);
-      }
+      return switchLatency(2, 2, numTokens, inPacket);
     }
 
   case Config::RAND_CLOS:
-    if (s == t) {
-      return threadLatency();
+    // Intra-switch
+    if ((int)(s/Config::get().tilesPerSwitch) == 
+        (int)(t/Config::get().tilesPerSwitch)) {
+      return switchLatency(0, 0, numTokens, inPacket);
     }
+    // Inter-switch
     else {
-      // If attached to the same edge switch
-      if ((int)(s/Config::get().tilesPerSwitch) == 
-          (int)(t/Config::get().tilesPerSwitch)) {
-        return switchLatency(0, 0, numTokens, inPacket);
-      }
-      else {
-        switch(numCores) {
-        default: assert(0);
-        // For single chip systems
-        case 64:
-        case 128:
-        case 256:
-          return switchLatency(2, 0, numTokens, inPacket);
-        // For multi-chip systems
-        case 512:
-        case 1024:
-        case 2048:
-        case 4096:
-          return switchLatency(2, 2, numTokens, inPacket);
-        }
+      switch(numCores) {
+      default: assert(0);
+      // For single chip systems
+      case 64:
+      case 128:
+      case 256:
+        return switchLatency(2, 0, numTokens, inPacket);
+      // For multi-chip systems
+      case 512:
+      case 1024:
+      case 2048:
+      case 4096:
+        return switchLatency(2, 2, numTokens, inPacket);
       }
     }
-    break;
   }
+  // Shouldn't get here
+  assert(0);
 }
 
 ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode, 
