@@ -17,22 +17,27 @@ void LatencyModel::init() {
   std::cout << "2D array parameters: " << numCores << std::endl;
 #endif 
   switch(Config::get().latencyModelType) {
-  default: break;
-  case Config::SP_2DMESH:
-  case Config::RAND_2DMESH:
-    switchDimX = (int) sqrt(Config::get().switchesPerChip);
-    switchDimY = (int) Config::get().switchesPerChip / switchDimX;
-    chipsDimX = (int) sqrt(numCores/Config::get().tilesPerChip);
-    chipsDimY = (int) (numCores/Config::get().tilesPerChip) / chipsDimX;
+    default: break;
+    case Config::SP_2DMESH:
+    case Config::RAND_2DMESH:
+    { int numSwitches = Config::get().numChips*Config::get().switchesPerChip;
+      int numChips = numCores/Config::get().tilesPerChip;
+      // Switch coordinates over all chips
+      switchDimX = (int) sqrt(numSwitches);
+      switchDimY = (int) numSwitches / switchDimX;
+      // Chip coordiantes
+      chipsDimX = (int) sqrt(numChips);
+      chipsDimY = (int) numChips / chipsDimX;
 #ifdef DEBUG
-    std::cout << "  Switches per chip: " << Config::get().switchesPerChip
-      << " (" << switchDimX << " x " << switchDimY << ")" << std::endl;
-    std::cout << "  System cores:      " << 
-      chipsDimX*chipsDimY*Config::get().tilesPerChip 
-      << " (" << chipsDimX << " x " << chipsDimY << " x " 
-      << Config::get().tilesPerChip << " tiles)" << std::endl;
+      std::cout << "  Switches per chip: " << Config::get().switchesPerChip
+        << " (" << switchDimX << " x " << switchDimY << ")" << std::endl;
+      std::cout << "  System cores:      " << 
+        chipsDimX*chipsDimY*Config::get().tilesPerChip 
+        << " (" << chipsDimX << " x " << chipsDimY << " x " 
+        << Config::get().tilesPerChip << " tiles)" << std::endl;
 #endif
-    break;
+      break;
+    }
   }
 }
 
@@ -59,7 +64,7 @@ int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip,
   // If route closed, latency due to opening a route through switches and contention
   if (!inPacket) {
     latency += (float) (hopsOnChip+hopsOffChip+1) *
-      ((float)Config::get().latencySwitchClosed * switchContentionFactor);
+      (float)Config::get().latencySwitchClosed;
   }
   // Round up and return
   return (int) ceil(latency);
@@ -72,20 +77,20 @@ int LatencyModel::calc2DMesh(int s, int t, int numTokens, bool inPacket) {
   }
 
   // Source coordinates
+  int s_switch = s / Config::get().tilesPerSwitch;
+  int s_switchX = s_switch % switchDimX;
+  int s_switchY = s_switch / switchDimX;
   int s_chip = s / Config::get().tilesPerChip;
   int s_chipX = s_chip % chipsDimX;
   int s_chipY = s_chip / chipsDimX;
-  int s_switch = (s / Config::get().tilesPerSwitch) % Config::get().switchesPerChip;
-  int s_switchX = s_switch % switchDimX;
-  int s_switchY = s_switch / switchDimX;
   
   // Destination coordinates
+  int t_switch = t / Config::get().tilesPerSwitch;
+  int t_switchX = t_switch % switchDimX;
+  int t_switchY = t_switch / switchDimX;
   int t_chip = t / Config::get().tilesPerChip;
   int t_chipX = t_chip % chipsDimX;
   int t_chipY = t_chip / chipsDimX;
-  int t_switch = (t / Config::get().tilesPerSwitch) % Config::get().switchesPerChip;
-  int t_switchX = t_switch % switchDimX;
-  int t_switchY = t_switch / switchDimX;
 
 /*#ifdef DEBUG
   std::cout << "\ns (" << s << ") : "
@@ -112,25 +117,13 @@ int LatencyModel::calc2DMesh(int s, int t, int numTokens, bool inPacket) {
       return switchLatency(0, 0, numTokens, inPacket);
     } 
     else {
-      // Inter-switch
+      // Inter-switch, between chips
       // x-dimension
-      if (s_chipX != t_chipX) {
-        offChipX = abs(s_chipX - t_chipX);
-        onChipX = s_chipX > t_chipX ? s_switchX : switchDimX-s_switchX-1;
-        onChipX += s_chipX > t_chipX ? switchDimX-t_switchX-1 : t_switchX;
-      }
-      else {
-        onChipX = abs(s_switchX - t_switchX);
-      }
+      offChipX = abs(s_chipX - t_chipX);
+      onChipX = abs(s_switchX - t_switchX) - offChipX;
       // y-dimension
-      if (s_chipY != t_chipY) {
-        offChipY = abs(s_chipY - t_chipY);
-        onChipY = s_chipY > t_chipY ? s_switchY : switchDimY-s_switchY-1;
-        onChipY += s_chipY > t_chipY ? switchDimY-t_switchY-1 : t_switchY;
-      }
-      else {
-        onChipY = abs(s_switchY - t_switchY);
-      }
+      offChipY = abs(s_chipY - t_chipY);
+      onChipY = abs(s_switchY - t_switchY) - offChipY;
       return switchLatency(onChipX+onChipY, offChipX+offChipY, numTokens, inPacket);
     }
 
