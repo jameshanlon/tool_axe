@@ -158,6 +158,8 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           illegalMemAccessPacket();
           return;
         }
+        // Convert address (base 0x0) to a physical one
+        memAddress = core.virtualAddress(memAddress);
         if (!core.isValidAddress(core.physicalAddress(memAddress))) {
           illegalMemAddress();
           return;
@@ -177,6 +179,8 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           illegalMemAccessPacket();
           return;
         }
+        // Convert address (base 0x0) to a physical one
+        memAddress = core.virtualAddress(memAddress);
         if (!core.isValidAddress(core.physicalAddress(memAddress))) {
           illegalMemAddress();
           return;
