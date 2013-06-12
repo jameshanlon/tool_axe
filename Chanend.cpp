@@ -18,6 +18,20 @@
   ((buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3])
 //#define DEBUG
 
+/*
+ * Reader:
+ *   OUTCT CT_READ4
+ *   OUT   <byte-addr> (physical address: 0 to RAM_SIZE)
+ *   IN    <value>
+ *   CHKCT CT_END
+ *
+ * Writer:
+ *   OUTCT CT_WRITE4
+ *   OUT   <byte-addr> (pysical address: 0 to RAM_SIZE)
+ *   OUT   <value>
+ *   CHKCT CT_END
+ */
+
 void Chanend::debug() {
   std::cout << std::setw(6) << (uint64_t) getOwner().time << " ";
   std::cout << "[c" << getOwner().getParent().getCoreID();
@@ -76,6 +90,7 @@ void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
         //std::cout<<"Got CRI "<<std::hex<<BYTES_TO_WORD(values)<<std::endl;
         break;
       case 1:
+        // Receive the physical memory address
         memAddress = BYTES_TO_WORD(values);
         //std::cout<<"Got address "<<std::hex<<memAddress<<std::endl;
         break;
@@ -91,6 +106,7 @@ void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
         //std::cout<<"Got CRI "<<std::hex<<BYTES_TO_WORD(values)<<std::endl;
         break;
       case 1:
+        // Receive the physical memory address
         memAddress = BYTES_TO_WORD(values);
         //std::cout<<"Got address "<<std::hex<<memAddress<<std::endl;
         break;
@@ -147,6 +163,7 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
   }
   else {
     Core &core = getOwner().getParent();
+    unsigned v;
     switch (value) {
     case CT_END:
       // Respond with (value, END) for READ or (END) for WRITE
@@ -158,20 +175,18 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           illegalMemAccessPacket();
           return;
         }
-        // Convert address (base 0x0) to a physical one
-        memAddress = core.virtualAddress(memAddress);
-        if (!core.isValidAddress(core.physicalAddress(memAddress))) {
+        if (!core.isValidAddress(memAddress)) {
           illegalMemAddress();
           return;
         }
-        out(getOwner(), core.loadWord(core.physicalAddress(memAddress)),
-            time+Config::get().latencyGlobalMemory);
+        v = core.loadWord(memAddress);
+        out(getOwner(), v, time+Config::get().latencyGlobalMemory);
         outct(getOwner(), CT_END, 
             time+Config::get().latencyGlobalMemory+CYCLES_PER_TICK);
         // Update the time of this thread to account for these operations
         getOwner().time += Config::get().latencyGlobalMemory+(2*CYCLES_PER_TICK);
         //debug(); std::cout<<"Reading from address "
-        //  <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
+        //    <<std::hex<<memAddress<<std::dec<<" = "<<v<<std::endl;
         //std::cout<<"End READ4"<<std::endl;
         break;
       case WRITE4:
@@ -180,18 +195,17 @@ void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
           return;
         }
         // Convert address (base 0x0) to a physical one
-        memAddress = core.virtualAddress(memAddress);
-        if (!core.isValidAddress(core.physicalAddress(memAddress))) {
+        if (!core.isValidAddress(memAddress)) {
           illegalMemAddress();
           return;
         }
-        core.storeWord(memValue, core.physicalAddress(memAddress));
+        core.storeWord(memValue, memAddress);
         outct(getOwner(), CT_END, 
             time+Config::get().latencyGlobalMemory+CYCLES_PER_TICK);
         // Update the time of this thread to account for these operations
         getOwner().time += Config::get().latencyGlobalMemory+(2*CYCLES_PER_TICK);
         //debug(); std::cout<<"Writing to address "
-        //  <<std::hex<<memAddress<<std::dec<<" = "<<memValue<std::endl;
+        //    <<std::hex<<memAddress<<std::dec<<" = "<<memValue<<std::endl;
         //std::cout<<"End WRITE4"<<std::endl;
         break;
       }
