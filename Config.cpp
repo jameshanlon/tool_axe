@@ -54,11 +54,11 @@ int Config::read(const std::string &file) {
     READ_U_PARAM("latency-link-off-chip",    latencyLinkOffChip);
     if (!strncmp("latency-model", line, strlen("latency-model"))) {
       sscanf(line, "latency-model%[^\"]\"%[^\"]\"", junk, str);
-      if (!strncmp("sp-2dmesh", str, strlen("sp-2dmesh"))) {
+      if (!strncmp("sp-mesh", str, strlen("sp-mesh"))) {
         latencyModelType = SP_2DMESH;
       } else if (!strncmp("sp-clos", str, strlen("sp-clos"))) {
         latencyModelType = SP_CLOS;
-      } else if (!strncmp("rand-2dmesh", str, strlen("rand-2dmesh"))) {
+      } else if (!strncmp("rand-mesh", str, strlen("rand-mesh"))) {
         latencyModelType = RAND_2DMESH;
       } else if (!strncmp("rand-clos", str, strlen("rand-clos"))) {
         latencyModelType = RAND_CLOS;
