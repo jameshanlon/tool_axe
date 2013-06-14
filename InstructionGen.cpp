@@ -1328,7 +1328,7 @@ void add()
            "%0 = LOAD_WORD(PhyAddr);\n")
     .addImplicitOp(dp, in)
     .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
-    .setCycles("INSTRUCTION_CYCLES + LOCAL_MEMORY_ACCESS_CYCLES");
+    .setCycles("INSTRUCTION_CYCLES + GLOBAL_MEMORY_ACCESS_CYCLES");
   fru6_out("LDWCP", "ldw %0, cp[%{cp}1]",
            "uint32_t Addr = %2 + %1;\n"
            "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
@@ -1358,7 +1358,7 @@ void add()
           "STORE_WORD(%0, PhyAddr);\n")
     .addImplicitOp(dp, in)
     .transform("%1 = %1 << 2;", "%1 = %1 >> 2;")
-    .setCycles("INSTRUCTION_CYCLES + LOCAL_MEMORY_ACCESS_CYCLES");
+    .setCycles("INSTRUCTION_CYCLES + GLOBAL_MEMORY_ACCESS_CYCLES");
   fru6_in("STWSP", "stw %0, sp[%1]",
           "uint32_t Addr = %2 + %1;\n"
           "uint32_t PhyAddr = PHYSICAL_ADDR(Addr);\n"
