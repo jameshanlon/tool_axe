@@ -35,7 +35,7 @@
 void Chanend::debug() {
   std::cout << std::setw(6) << (uint64_t) getOwner().time << " ";
   std::cout << "[c" << getOwner().getParent().getCoreID();
-  std::cout << "t"<<getOwner().getID() << "] ";
+  std::cout << "t"<<getOwner().getNum() << "] ";
 }
 
 void Chanend::illegalMemAccessPacket() {
