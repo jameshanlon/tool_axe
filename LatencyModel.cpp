@@ -263,6 +263,12 @@ ticks_t LatencyModel::calc(uint32_t sCore, uint32_t sNode,
   if (cache.size() > MAX_CACHED) {
     assert(0 && "Latency cache too large.");
   }*/
+
+  // Return latency multiplied by the number of cycles because we essentially
+  // want each thread to appear to run at the core clock. Each instruciton
+  // takes INSTRUCTION_CYCLES=CYCLES_PER_TICK cycles to complete (the number
+  // of core clocks) and timers output thread cycles @ 1/CYCLES_PER_TICK of the
+  // core clock.
   return latency * CYCLES_PER_TICK;
 }
 
