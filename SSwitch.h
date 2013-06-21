@@ -54,6 +54,7 @@ public:
 
   virtual bool canAcceptToken();
   virtual bool canAcceptTokens(unsigned tokens);
+  virtual void reserveBufferSpace(unsigned tokens);
 
   virtual void receiveDataToken(ticks_t time, uint8_t value);
 

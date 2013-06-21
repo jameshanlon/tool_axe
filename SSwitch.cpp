@@ -188,6 +188,12 @@ bool SSwitch::canAcceptTokens(unsigned tokens)
   return !sendingResponse;
 }
 
+void SSwitch::reserveBufferSpace(unsigned tokens)
+{
+  // TODO
+  assert(0);
+}
+
 void SSwitch::receiveDataToken(ticks_t time, uint8_t value)
 {
   if (junkIncomingTokens) {

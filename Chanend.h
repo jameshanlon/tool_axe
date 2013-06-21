@@ -19,6 +19,18 @@ private:
   /// Input buffer.
   typedef ring_buffer<Token, CHANEND_BUFFER_SIZE> TokenBuffer;
   TokenBuffer buf;
+  // The 'reseredBufferSpace' count provides *some* simulation of messages in
+  // flight. This avoids messages being sent when there is not sufficient buffer
+  // space, but *only* when a route is open between the sender and receiver. 
+
+  // When the route is closed during an exchange, futher messages can be sent
+  // before the closing token has arrived and assume the route has opened,
+  // threreby causing a similar problem.  The effect is that messages following
+  // an END do not cause the receiving thread to be scheduled.
+
+  // This is only a problem with message sequences that do not adhere to the XC 
+  // protocol.
+  unsigned reservedBufferSpace;
   /// Thread paused on an output instruction, 0 if none.
   Thread *pausedOut;
   /// Thread paused on an input instruction, 0 if none.
@@ -61,6 +73,7 @@ private:
 
   bool canAcceptToken();
   bool canAcceptTokens(unsigned tokens);
+  void reserveBufferSpace(unsigned tokens);
 
   /// Recieve data token. The caller must check sufficient room is available
   /// using canAcceptToken().
@@ -95,6 +108,7 @@ public:
   {
     assert(!isInUse() && "Trying to allocate in use chanend");
     dest = 0;
+    reservedBufferSpace = 0;
     pausedOut = 0;
     pausedIn = 0;
     inPacket = false;

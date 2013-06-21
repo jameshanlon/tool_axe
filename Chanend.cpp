@@ -48,16 +48,22 @@ void Chanend::illegalMemAddress() {
 
 bool Chanend::canAcceptToken()
 {
-  return !buf.full();
+  return (buf.remaining()-reservedBufferSpace) >= 1;
 }
 
 bool Chanend::canAcceptTokens(unsigned tokens)
 {
-  return buf.remaining() >= tokens;
+  return (buf.remaining()-reservedBufferSpace) >= tokens;
+}
+
+void Chanend::reserveBufferSpace(unsigned tokens) 
+{
+  reservedBufferSpace += tokens;
 }
 
 void Chanend::receiveDataToken(ticks_t time, uint8_t value)
 {
+  reservedBufferSpace--;
   if (memAccessPacket) {
     illegalMemAccessPacket();
     return;
@@ -71,6 +77,7 @@ void Chanend::receiveDataToken(ticks_t time, uint8_t value)
 
 void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
 {
+  reservedBufferSpace -= num;
   if (!memAccessPacket) {
     for (unsigned i = 0; i < num; i++) {
       buf.push_back(Token(values[i]));
@@ -132,6 +139,7 @@ void Chanend::receiveDataTokens(ticks_t time, uint8_t *values, unsigned num)
 
 void Chanend::receiveCtrlToken(ticks_t time, uint8_t value)
 {
+  reservedBufferSpace--;
   if (!memAccessPacket) {
     switch (value) {
     case CT_END:
@@ -314,6 +322,7 @@ outt(Thread &thread, uint8_t value, ticks_t time)
   //dest->receiveDataToken(time, value);
   TokenDelay *td = new DataTokenDelay(dest, value);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+l);
+  dest->reserveBufferSpace(1);
 #ifdef DEBUG
   debug(); std::cout << "Sent a data token at "
       << time << " with delay " << l << std::endl;
@@ -346,6 +355,7 @@ out(Thread &thread, uint32_t value, ticks_t time)
   //dest->receiveDataTokens(time, tokens, 4);
   TokenDelay *td = new DataTokensDelay(dest, tokens, 4);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+l);
+  dest->reserveBufferSpace(4);
 #ifdef DEBUG
   debug(); std::cout << "Sent 4 data tokens at "
       << time << " with delay " << l << std::endl;
@@ -376,6 +386,7 @@ outct(Thread &thread, uint8_t value, ticks_t time)
   //dest->receiveCtrlToken(time, value);
   TokenDelay *td = new CtrlTokenDelay(dest, value);
   getOwner().getParent().getParent()->getParent()->scheduleOther(*td, time+l);
+  dest->reserveBufferSpace(1);
 #ifdef DEBUG
   debug(); std::cout << "Sent a control token at "
       << time << " with delay " << l << std::endl;

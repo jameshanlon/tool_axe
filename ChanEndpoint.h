@@ -47,6 +47,7 @@ public:
 
   virtual bool canAcceptToken() = 0;
   virtual bool canAcceptTokens(unsigned tokens) = 0;
+  virtual void reserveBufferSpace(unsigned tokens) = 0;
 
   /// Recieve data token. The caller must check sufficient room is available
   /// using canAcceptToken().
