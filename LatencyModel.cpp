@@ -57,7 +57,8 @@ int LatencyModel::switchLatency(int hopsOnChip, int hopsOffChip,
   // Fixed overhead
   latency += (float) (hopsOnChip * Config::get().latencyLinkOnChip);
   latency += (float) (hopsOffChip * Config::get().latencyLinkOffChip);
-  latency += (float) hopsOnChip+hopsOffChip > 0 ? Config::get().latencySerialisation : 0;
+  // Only pay serialisation off-chip
+  latency += (float) hopsOffChip > 0 ? Config::get().latencySerialisation : 0;
   // Switch latency
   latency += (float) (hopsOnChip+hopsOffChip+1) * 
     ((float)Config::get().latencySwitch * switchContentionFactor);
